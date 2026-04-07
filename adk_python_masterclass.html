@@ -1481,7 +1481,7 @@ pipeline = <span class="cl">SequentialAgent</span>(
         </div>
       </div>
 
-      <p>ADK's workflow agents are <strong>pure orchestrators — they use no LLM themselves</strong>. They control execution flow; LLM work happens only in their sub-agents (which still use LiteLlm).</p>
+      <p>ADK workflow agents are <strong>pure orchestrators — they use no LLM themselves</strong>. In this repo's Module 08, they drive a modern <strong>retail deposit platform</strong> use case: concurrent risk checks, iterative exception reconciliation, and a final product-offer decision.</p>
 
       <div class="compare-grid">
         <div class="compare-card">
@@ -1489,7 +1489,7 @@ pipeline = <span class="cl">SequentialAgent</span>(
           <ul>
             <li>Runs sub-agents in order (pipeline)</li>
             <li>Output of step N → session.state → step N+1</li>
-            <li>Use for: ETL, content pipelines, multi-step workflows</li>
+            <li>Use for: end-to-end product/ops pipelines with state handoff</li>
             <li>Steps share state via output_key</li>
           </ul>
         </div>
@@ -1498,7 +1498,7 @@ pipeline = <span class="cl">SequentialAgent</span>(
           <ul>
             <li>Repeats sub-agents until escalate_to_parent() is called</li>
             <li>Set max_iterations as a safety cap</li>
-            <li>Use for: retry loops, polling, iterative refinement</li>
+            <li>Use for: operational retries, queue drains, iterative reconciliation</li>
             <li>Agent escalates when goal is achieved</li>
           </ul>
         </div>
@@ -1507,7 +1507,7 @@ pipeline = <span class="cl">SequentialAgent</span>(
           <ul>
             <li>Runs all sub-agents concurrently (asyncio)</li>
             <li>Results collected when all finish</li>
-            <li>Use for: fan-out, simultaneous API calls</li>
+            <li>Use for: fan-out checks (risk, compliance, pricing, scoring)</li>
             <li>Each sub-agent gets its own output_key</li>
           </ul>
         </div>
@@ -1524,57 +1524,37 @@ pipeline = <span class="cl">SequentialAgent</span>(
 
       <div class="code-wrapper">
         <div class="code-header">
-          <div class="code-filename">module_08_workflow_agents.py</div>
+          <div class="code-filename">workflow_agent/agent.py (Module 08 in this repo)</div>
           <span class="code-lang">PYTHON</span>
         </div>
-        <pre><code><span class="kw">from</span> google.adk.agents <span class="kw">import</span> <span class="cl">SequentialAgent</span>, <span class="cl">LoopAgent</span>, <span class="cl">ParallelAgent</span>
+        <pre><code><span class="kw">from</span> google.adk.agents <span class="kw">import</span> <span class="cl">LlmAgent</span>, <span class="cl">LoopAgent</span>, <span class="cl">ParallelAgent</span>, <span class="cl">SequentialAgent</span>
 
-<span class="cm"># ── Sequential: topic → expand → write paragraph ────────────────</span>
-pipeline = <span class="cl">SequentialAgent</span>(
-    name=<span class="st">"content_pipeline"</span>,
-    description=<span class="st">"Expands topic then writes a paragraph."</span>,
-    sub_agents=[
-        <span class="cl">LlmAgent</span>(
-            name=<span class="st">"idea_expander"</span>,
-            model=<span class="cl">LiteLlm</span>(model=<span class="st">"openai/gpt-4o-mini"</span>),
-            instruction=<span class="st">"Output exactly 3 numbered key points about the topic."</span>,
-            output_key=<span class="st">"expanded_points"</span>,  <span class="cm"># ← next agent reads this</span>
-        ),
-        <span class="cl">LlmAgent</span>(
-            name=<span class="st">"paragraph_writer"</span>,
-            model=<span class="cl">LiteLlm</span>(model=<span class="st">"openai/gpt-4o-mini"</span>),
-            instruction=<span class="st">"Write ONE paragraph from the 3 points in session state 'expanded_points'."</span>,
-            output_key=<span class="st">"final_paragraph"</span>,
-        ),
-    ],
+<span class="cm"># ── Parallel use case: run deposit-health + compliance checks ───</span>
+parallel_assessment = <span class="cl">ParallelAgent</span>(
+    name=<span class="st">"deposit_parallel_assessment"</span>,
+    sub_agents=[deposit_health_agent, compliance_risk_agent],
 )
 
-<span class="cm"># ── Parallel: writer + analyst run simultaneously ────────────────</span>
-parallel = <span class="cl">ParallelAgent</span>(
-    name=<span class="st">"parallel_content"</span>,
-    description=<span class="st">"Runs writer and analyst concurrently."</span>,
-    sub_agents=[
-        <span class="cl">LlmAgent</span>(
-            name=<span class="st">"parallel_writer"</span>,
-            model=<span class="cl">LiteLlm</span>(model=<span class="st">"openai/gpt-4o-mini"</span>),
-            instruction=<span class="st">"Write ONE creative tagline for the topic. Max 15 words."</span>,
-            output_key=<span class="st">"tagline"</span>,
-        ),
-        <span class="cl">LlmAgent</span>(
-            name=<span class="st">"parallel_analyst"</span>,
-            model=<span class="cl">LiteLlm</span>(model=<span class="st">"openai/gpt-4o-mini"</span>),
-            instruction=<span class="st">"List exactly 3 business benefits. Bullet points only."</span>,
-            output_key=<span class="st">"benefits"</span>,
-        ),
-    ],
+<span class="cm"># ── Loop use case: clear one exception each cycle ───────────────</span>
+exception_loop = <span class="cl">LoopAgent</span>(
+    name=<span class="st">"deposit_exception_loop"</span>,
+    sub_agents=[exception_resolver_agent],
+    max_iterations=<span class="nm">3</span>,  <span class="cm"># safety cap for queue replay</span>
 )
 
-<span class="cm"># ── Loop: repeat until agent escalates ──────────────────────────</span>
-loop = <span class="cl">LoopAgent</span>(
-    name=<span class="st">"refinement_loop"</span>,
-    description=<span class="st">"Iteratively refines until goal met."</span>,
-    sub_agents=[<span class="fn">build_refiner_agent</span>()],
-    max_iterations=<span class="nm">5</span>,  <span class="cm"># safety cap</span>
+<span class="cm"># ── Composition pattern: parallel -> loop -> final decision ─────</span>
+composition = <span class="cl">SequentialAgent</span>(
+    name=<span class="st">"retail_deposit_composition"</span>,
+    sub_agents=[
+        parallel_assessment,
+        exception_loop,
+        <span class="cl">LlmAgent</span>(
+            name=<span class="st">"final_offer_agent"</span>,
+            instruction=<span class="st">"Call get_deposit_offer_request and return final offer."</span>,
+            tools=[get_deposit_offer_request],
+            output_key=<span class="st">"final_offer_decision"</span>,
+        ),
+    ],
 )</code></pre>
       </div>
     </div>
@@ -1590,64 +1570,115 @@ loop = <span class="cl">LoopAgent</span>(
         </div>
       </div>
 
-      <p>ADK converts plain Python functions to tools with zero boilerplate — just add them to <span class="ic">tools=[]</span>. ADK reads type hints and docstrings to auto-generate the JSON schema. For tools that need session state access, add a <span class="ic">tool_context: ToolContext</span> parameter — ADK injects it automatically; the LLM never sees it.</p>
+      <p>ADK converts plain Python functions to tools with zero boilerplate — add callables to <span class="ic">tools=[]</span>; type hints and docstrings become the tool schema. <strong>This repo already does this end-to-end:</strong> Module 08 retail deposit tools live in <span class="ic">workflow_agent/workflow_tools.py</span> (profile, deposits, AML, velocity, exception queue); Module 07 business banking tools live in <span class="ic">multi_agent_banking/banking_tools.py</span> (deposits, balances, bills, overdraft request). Both return structured <span class="ic">dict</span>s so the model gets JSON-friendly facts from mock &ldquo;core banking&rdquo; data. For tools that must read or write <strong>session state</strong> directly, add <span class="ic">tool_context: ToolContext</span> — ADK injects it; the LLM never sees it (pattern below extends the same agents).</p>
 
       <div class="code-wrapper">
         <div class="code-header">
-          <div class="code-filename">module_09_function_tools.py — basic tools</div>
+          <div class="code-filename">workflow_agent/workflow_tools.py — Module 08 (retail deposit)</div>
           <span class="code-lang">PYTHON</span>
         </div>
-        <pre><code><span class="kw">def</span> <span class="fn">calculate_bmi</span>(weight_kg: <span class="cl">float</span>, height_m: <span class="cl">float</span>) -> dict:
-    <span class="dc">"""Calculates Body Mass Index (BMI).
-    Args:
-        weight_kg: Weight in kilograms.
-        height_m: Height in meters.
-    Returns: dict with bmi value and category."""</span>
-    <span class="kw">if</span> height_m <= <span class="nm">0</span>:
-        <span class="kw">return</span> {<span class="st">"status"</span>: <span class="st">"error"</span>, <span class="st">"message"</span>: <span class="st">"Height must be positive"</span>}
-    bmi = weight_kg / (height_m ** <span class="nm">2</span>)
-    category = (
-        <span class="st">"Underweight"</span> <span class="kw">if</span> bmi < <span class="nm">18.5</span> <span class="kw">else</span>
-        <span class="st">"Normal"</span>      <span class="kw">if</span> bmi < <span class="nm">25</span>   <span class="kw">else</span>
-        <span class="st">"Overweight"</span>  <span class="kw">if</span> bmi < <span class="nm">30</span>   <span class="kw">else</span> <span class="st">"Obese"</span>
-    )
-    <span class="kw">return</span> {<span class="st">"status"</span>: <span class="st">"success"</span>, <span class="st">"bmi"</span>: <span class="fn">round</span>(bmi, <span class="nm">1</span>), <span class="st">"category"</span>: category}</code></pre>
+        <pre><code><span class="kw">from</span> typing <span class="kw">import</span> Any
+
+<span class="kw">def</span> <span class="fn">get_deposit_profile</span>(customer_id: <span class="cl">str</span>) -> dict[str, Any]:
+    <span class="dc">"""Return customer profile for retail-deposit underwriting and servicing."""</span>
+    data = <span class="fn">_get_customer</span>(customer_id)
+    <span class="kw">if</span> <span class="st">"error"</span> <span class="kw">in</span> data:
+        <span class="kw">return</span> data
+    <span class="kw">return</span> {
+        <span class="st">"customer_id"</span>: customer_id.upper(),
+        <span class="st">"customer_name"</span>: data[<span class="st">"customer_name"</span>],
+        <span class="st">"segment"</span>: data[<span class="st">"segment"</span>],
+        <span class="st">"channel"</span>: data[<span class="st">"channel"</span>],
+        <span class="st">"monthly_income"</span>: data[<span class="st">"monthly_income"</span>],
+        <span class="st">"avg_month_end_balance"</span>: data[<span class="st">"avg_month_end_balance"</span>],
+    }
+
+<span class="kw">def</span> <span class="fn">run_aml_screening</span>(customer_id: <span class="cl">str</span>) -> dict[str, Any]:
+    <span class="dc">"""Return AML screening metrics relevant to deposit operations."""</span>
+    data = <span class="fn">_get_customer</span>(customer_id)
+    <span class="kw">if</span> <span class="st">"error"</span> <span class="kw">in</span> data:
+        <span class="kw">return</span> data
+    rs = data[<span class="st">"risk_signals"</span>]
+    status = <span class="st">"PASS"</span> <span class="kw">if</span> rs[<span class="st">"aml_alerts_90d"</span>] == <span class="nm">0</span> <span class="kw">else</span> <span class="st">"REVIEW"</span>
+    <span class="kw">return</span> {
+        <span class="st">"customer_id"</span>: customer_id.upper(),
+        <span class="st">"customer_name"</span>: data[<span class="st">"customer_name"</span>],
+        <span class="st">"aml_alerts_90d"</span>: rs[<span class="st">"aml_alerts_90d"</span>],
+        <span class="st">"cash_deposit_ratio"</span>: rs[<span class="st">"cash_deposit_ratio"</span>],
+        <span class="st">"aml_status"</span>: status,
+    }
+<span class="cm"># Also in this file: get_recent_deposits, run_velocity_check,</span>
+<span class="cm"># fetch_next_deposit_exception, clear_deposit_exception, get_deposit_offer_request</span></code></pre>
       </div>
 
       <div class="code-wrapper">
         <div class="code-header">
-          <div class="code-filename">module_09_function_tools.py — ToolContext-aware tool</div>
+          <div class="code-filename">multi_agent_banking/banking_tools.py — Module 07 (business banking)</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">from</span> typing <span class="kw">import</span> Any
+
+<span class="kw">def</span> <span class="fn">get_monthly_deposits</span>(customer_id: <span class="cl">str</span>) -> dict[str, Any]:
+    <span class="dc">"""Return deposit transactions for the last calendar month and MTD."""</span>
+    data = <span class="fn">_get_customer</span>(customer_id)
+    <span class="kw">if</span> <span class="st">"error"</span> <span class="kw">in</span> data:
+        <span class="kw">return</span> data
+    deposits = data[<span class="st">"deposits"</span>]
+    total = <span class="fn">sum</span>(d[<span class="st">"amount"</span>] <span class="kw">for</span> d <span class="kw">in</span> deposits)
+    <span class="kw">return</span> {
+        <span class="st">"customer_id"</span>: customer_id.upper(),
+        <span class="st">"customer_name"</span>: data[<span class="st">"name"</span>],
+        <span class="st">"deposit_count"</span>: <span class="fn">len</span>(deposits),
+        <span class="st">"total_deposits"</span>: total,
+        <span class="st">"average_deposit"</span>: <span class="fn">round</span>(total / <span class="fn">max</span>(<span class="fn">len</span>(deposits), <span class="nm">1</span>), <span class="nm">2</span>),
+        <span class="st">"deposits"</span>: deposits,
+    }
+
+<span class="kw">def</span> <span class="fn">get_overdraft_request</span>(customer_id: <span class="cl">str</span>) -> dict[str, Any]:
+    <span class="dc">"""Return account details and requested limit; includes demo_expected_decision for teaching."""</span>
+    data = <span class="fn">_get_customer</span>(customer_id)
+    <span class="kw">if</span> <span class="st">"error"</span> <span class="kw">in</span> data:
+        <span class="kw">return</span> data
+    cid = customer_id.strip().upper()
+    <span class="kw">return</span> {
+        <span class="st">"customer_id"</span>: cid,
+        <span class="st">"customer_name"</span>: data[<span class="st">"name"</span>],
+        <span class="st">"current_balance"</span>: data[<span class="st">"current_balance"</span>],
+        <span class="st">"overdraft_limit_requested"</span>: data[<span class="st">"overdraft_limit_requested"</span>],
+        <span class="st">"demo_expected_decision"</span>: _DEMO_EXPECTED_DECISION.<span class="fn">get</span>(cid, <span class="st">"CONDITIONAL APPROVE"</span>),
+    }</code></pre>
+      </div>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">Pattern: ToolContext + session.state (extend Modules 07–08)</div>
           <span class="code-lang">PYTHON</span>
         </div>
         <pre><code><span class="kw">from</span> google.adk.tools.tool_context <span class="kw">import</span> <span class="cl">ToolContext</span>
 
-<span class="kw">def</span> <span class="fn">save_preference</span>(key: <span class="cl">str</span>, value: <span class="cl">str</span>, tool_context: <span class="cl">ToolContext</span>) -> dict:
-    <span class="dc">"""Saves a user preference to session state.
+<span class="kw">def</span> <span class="fn">append_ops_audit_note</span>(customer_id: <span class="cl">str</span>, note: <span class="cl">str</span>, tool_context: <span class="cl">ToolContext</span>) -> dict:
+    <span class="dc">"""Append a short ops audit line to session state (not in repo; same pattern as prefs).
     Args:
-        key: preference name (e.g. 'language').
-        value: preference value (e.g. 'French').
-        tool_context: ADK context — injected automatically, hidden from LLM.
-    Returns: confirmation dict."""</span>
-    <span class="cm"># tool_context.state is the session state dict</span>
-    tool_context.state[<span class="st">f"pref_{key}"</span>] = value
-    <span class="kw">return</span> {<span class="st">"status"</span>: <span class="st">"success"</span>, <span class="st">"saved"</span>: {key: value}}
+        customer_id: Customer identifier.
+        note: Free-text audit line.
+        tool_context: ADK-injected; omitted from the LLM tool schema.
+    Returns: status and running count."""</span>
+    key = <span class="st">"ops_audit_lines"</span>
+    lines = <span class="fn">list</span>(tool_context.state.<span class="fn">get</span>(key) <span class="kw">or</span> [])
+    lines.append({<span class="st">"customer_id"</span>: customer_id.strip().upper(), <span class="st">"note"</span>: note})
+    tool_context.state[key] = lines
+    <span class="kw">return</span> {<span class="st">"status"</span>: <span class="st">"success"</span>, <span class="st">"line_count"</span>: <span class="fn">len</span>(lines)}
 
-<span class="kw">def</span> <span class="fn">get_preference</span>(key: <span class="cl">str</span>, tool_context: <span class="cl">ToolContext</span>) -> dict:
-    <span class="dc">"""Retrieves a saved user preference from session state.
-    Args:
-        key: preference name to retrieve.
-        tool_context: ADK context — injected automatically."""</span>
-    value = tool_context.state.<span class="fn">get</span>(<span class="st">f"pref_{key}"</span>)
-    <span class="kw">return</span> {<span class="st">"status"</span>: <span class="st">"success"</span> <span class="kw">if</span> value <span class="kw">else</span> <span class="st">"not_found"</span>,
-            <span class="st">"key"</span>: key, <span class="st">"value"</span>: value}
-
-<span class="cm"># Agent wires it all together</span>
+<span class="cm"># Wire plain tools + ToolContext tool together on one agent</span>
 agent = <span class="cl">LlmAgent</span>(
-    name=<span class="st">"tools_agent"</span>,
-    model=<span class="cl">LiteLlm</span>(model=<span class="st">"openai/gpt-4o-mini"</span>),
-    instruction=<span class="st">"Use calculate_bmi, save_preference, get_preference as needed."</span>,
-    tools=[<span class="fn">calculate_bmi</span>, <span class="fn">save_preference</span>, <span class="fn">get_preference</span>],
-    <span class="cm"># tool_context is injected by ADK — the LLM never sees it</span>
+    name=<span class="st">"deposit_tools_agent"</span>,
+    model=<span class="cl">LiteLlm</span>(model=<span class="st">"openai/your-litellm-model"</span>),
+    instruction=(
+        <span class="st">"Use get_deposit_profile / get_monthly_deposits for facts; "</span>
+        <span class="st">"call append_ops_audit_note when the user asks to log an ops action."</span>
+    ),
+    tools=[get_deposit_profile, get_monthly_deposits, append_ops_audit_note],
+    <span class="cm"># tool_context params are injected by ADK — never exposed to the model</span>
 )</code></pre>
       </div>
 
@@ -2175,7 +2206,7 @@ model = <span class="cl">LiteLlm</span>(model=<span class="st">"openai/smart-mod
           <tr><td>06</td><td>Custom Agent</td><td>BaseAgent + LlmAgent children + route banner</td><td>Rule-based routing, hybrid logic, show which specialist ran</td></tr>
           <tr><td>07</td><td>Multi-Agent Banking</td><td>SequentialAgent + mock tools + streaming audit + demo_expected_decision + run_banking.sh</td><td>Pipeline + observability + fixed approve/deny teaching outcomes</td></tr>
           <tr><td>08</td><td>Workflow Agents</td><td>Sequential/Parallel/LoopAgent</td><td>Defined execution patterns</td></tr>
-          <tr><td>09</td><td>Function Tools</td><td>Python functions + ToolContext</td><td>Custom tool logic + state access</td></tr>
+          <tr><td>09</td><td>Function Tools</td><td><span class="ic">banking_tools</span> / <span class="ic">workflow_tools</span> + ToolContext</td><td>Structured dict returns + optional session writes</td></tr>
           <tr><td>10</td><td>MCP Client</td><td>McpToolset</td><td>Use external MCP tool servers</td></tr>
           <tr><td>11</td><td>MCP Server</td><td>mcp.server + list_tools/call_tool</td><td>Expose your own tools via MCP</td></tr>
           <tr><td>12</td><td>In-Memory Session</td><td>InMemorySessionService</td><td>Dev, testing, stateless tasks</td></tr>

@@ -10,7 +10,7 @@ The goal is to help you answer three questions:
 
 ## Big Picture
 
-This project now has 12 main parts:
+This project now has 14 main parts:
 
 - `simple_litellm_agent/`: the actual ADK agent code
 - `mulit_agent/`: a simple Module 02 example with two independent agents
@@ -19,12 +19,14 @@ This project now has 12 main parts:
 - `advanced_agent/`: Module 05 — weather-only LLM agent with Meteosource + temperature tools
 - `custom_agent/`: Module 06 — `BaseAgent` keyword router delegating to two `LlmAgent` children
 - `multi_agent_banking/`: Module 07 — `SequentialAgent` pipeline for business banking overdraft approval (deposit, bill, and decision agents)
+- `workflow_agent/`: Module 08 — workflow orchestrators for retail deposit operations (`LoopAgent`, `ParallelAgent`, and composition)
 - `agents.json`: the list of agents shown in the UI
 - `agent_registry.py`: a small registry that lists available agents
 - `api_app.py`: the shared HTTP API for external clients
 - `streamlit_app.py`: the original chat UI
 - `ui/`: the React + Vite + Tailwind chat UI
 - `run_banking.sh`: optional CLI wrapper for Module 07 (approve / deny / both customers, no API or React)
+- `run_workflow.sh`: optional CLI wrapper for Module 08 (workflow scenarios, no API or React)
 
 There are also `tests/agent_registry_smoke_test.py`, `tests/smoke_test.py`, `tests/mulit_agent_smoke_test.py`, `tests/orchestrate_agent_smoke_test.py`, `tests/multi_agent_banking_smoke_test.py`, and `tests/api_smoke_test.py`, which check that the registry, agents, and API work correctly.
 
@@ -50,19 +52,22 @@ If you are a beginner, read the files in this order:
 16. `multi_agent_banking/banking_tools.py`
 17. `multi_agent_banking/agent.py`
 18. `multi_agent_banking/main.py`
-19. `agents.json`
-20. `agent_registry.py`
-21. `api_app.py`
-22. `streamlit_app.py`
-23. `AGENT_HELP.md` (module reference; keep in sync with `ui/src/help/agentHelp.js`)
-24. `ui/src/help/agentHelp.js` and `ui/src/help/HelpOverlay.jsx`
-25. `ui/src/App.jsx`
-26. `tests/agent_registry_smoke_test.py`
-27. `tests/smoke_test.py`
-28. `tests/mulit_agent_smoke_test.py`
-29. `tests/orchestrate_agent_smoke_test.py`
-30. `tests/multi_agent_banking_smoke_test.py`
-31. `tests/api_smoke_test.py`
+19. `workflow_agent/workflow_tools.py`
+20. `workflow_agent/agent.py`
+21. `workflow_agent/main.py`
+22. `agents.json`
+23. `agent_registry.py`
+24. `api_app.py`
+25. `streamlit_app.py`
+26. `AGENT_HELP.md` (module reference; keep in sync with `ui/src/help/agentHelp.js`)
+27. `ui/src/help/agentHelp.js` and `ui/src/help/HelpOverlay.jsx`
+28. `ui/src/App.jsx`
+29. `tests/agent_registry_smoke_test.py`
+30. `tests/smoke_test.py`
+31. `tests/mulit_agent_smoke_test.py`
+32. `tests/orchestrate_agent_smoke_test.py`
+33. `tests/multi_agent_banking_smoke_test.py`
+34. `tests/api_smoke_test.py`
 
 That order goes from simple configuration to the full app flow.
 
@@ -76,6 +81,7 @@ adk-masterclass/
 ├── requirements.txt
 ├── run.sh
 ├── run_banking.sh
+├── run_workflow.sh
 ├── runstreamlit.sh
 ├── api_app.py
 ├── agents.json
@@ -125,6 +131,11 @@ adk-masterclass/
 │   ├── agent.py
 │   ├── main.py
 │   └── banking_tools.py
+├── workflow_agent/
+│   ├── __init__.py
+│   ├── agent.py
+│   ├── main.py
+│   └── workflow_tools.py
 └── simple_litellm_agent/
     ├── __init__.py
     ├── config.py
@@ -368,6 +379,49 @@ It:
 
 Think of this file as: "Module 07 — three agents in sequence, streamed or buffered, with full observability."
 
+### `workflow_agent/workflow_tools.py`
+
+This file defines mock data and tool functions for Module 08 (retail deposit workflows).
+
+It:
+
+- stores two demo retail customers (`RET-3101` healthy, `RET-4420` higher-risk)
+- implements profile and deposit retrieval tools (`get_deposit_profile`, `get_recent_deposits`)
+- implements risk checks (`run_aml_screening`, `run_velocity_check`)
+- implements loop tooling for operational reconciliation (`fetch_next_deposit_exception`, `clear_deposit_exception`)
+- exposes `get_deposit_offer_request` with deterministic `demo_expected_offer`
+- includes `reset_workflow_state()` to clear the loop cursor before each CLI run
+
+Think of this file as: "mock retail core-banking deposit tools + loop state."
+
+### `workflow_agent/agent.py`
+
+This file builds the Module 08 workflow-agent scenarios.
+
+It:
+
+- creates a `LoopAgent` (`deposit_exception_loop`) where one resolver agent processes one pending exception per iteration
+- creates a `ParallelAgent` (`deposit_parallel_assessment`) that runs deposit-health and compliance-risk analyses concurrently
+- creates a composition pattern with `SequentialAgent(ParallelAgent -> LoopAgent -> final_offer_agent)`
+- forces deterministic final recommendation in the composition step by matching tool field `demo_expected_offer`
+
+Think of this file as: "workflow orchestration patterns over one deposit use case."
+
+### `workflow_agent/main.py`
+
+This file runs Module 08 from the CLI (no API/UI integration).
+
+It:
+
+- accepts `--scenario` as `loop`, `parallel`, or `composition`
+- caches one `Runner` per scenario with `InMemorySessionService`
+- resets loop cursor state before execution so exception replay always starts at item 1
+- prints a **terminal audit trail** by default (agent start/end, tool calls with JSON args, tool results with summaries); use `--quiet` for final text only
+- normalizes customer aliases in Python (`week` -> `RET-4420`, same as `run_workflow.sh`)
+- reuses the same `run_prompt(...)` contract but keeps this module intentionally outside `agents.json`
+
+Think of this file as: "scenario-driven CLI runner for Module 08 workflow lessons."
+
 ### `agents.json`
 
 This file stores the list of agents for the app.
@@ -430,6 +484,20 @@ It:
 - normalizes the first argument with **`tr '[:upper:]' '[:lower:]'`** (works on macOS Bash 3.2; avoids `${var,,}` which requires Bash 4+)
 
 Think of this file as: "CLI shortcut for the banking approve / deny scenarios."
+
+### `run_workflow.sh`
+
+This script runs Module 08 workflow scenarios for retail deposit operations.
+
+It:
+
+- clears the terminal at startup (`clear`, with an ANSI escape fallback)
+- accepts `loop`, `parallel`, `composition`, or `all`
+- accepts customer aliases (`strong` / `healthy` -> `RET-3101`, `weak` / `risk` / `week` -> `RET-4420`)
+- executes `python -m workflow_agent.main <customer> --scenario <name>`
+- keeps this lesson independent from API and UI agent registration
+
+Think of this file as: "CLI harness for LoopAgent, ParallelAgent, and composition demos."
 
 ### `runstreamlit.sh`
 
@@ -792,6 +860,56 @@ Short version:
 
 ```text
 run_banking.sh -> multi_agent_banking/main.py -> SequentialAgent -> audit trail + text output
+```
+
+### Flow 9: Run a Module 08 workflow scenario directly
+
+Command:
+
+```bash
+./.venv/bin/python -m workflow_agent.main RET-3101 --scenario composition
+# Or: --scenario loop
+#     --scenario parallel
+```
+
+What happens:
+
+1. Python starts `workflow_agent/main.py`.
+2. `reset_workflow_state()` clears the loop cursor so exception handling starts from the first pending item.
+3. A scenario-specific runner is built:
+   - `loop` -> `LoopAgent`
+   - `parallel` -> `ParallelAgent`
+   - `composition` -> `SequentialAgent(ParallelAgent -> LoopAgent -> final_offer_agent)`
+4. The customer ID is sent to the selected workflow agent.
+5. For composition, parallel analysis runs first, loop reconciliation runs second, then final offer decision is generated from session state.
+
+Short version:
+
+```text
+terminal -> workflow_agent/main.py -> selected workflow agent -> retail deposit tools -> final scenario output
+```
+
+### Flow 10: Run the Module 08 workflow CLI script
+
+Command:
+
+```bash
+./run_workflow.sh                    # all scenarios for RET-3101
+./run_workflow.sh loop weak          # loop scenario for RET-4420
+./run_workflow.sh composition strong # composition for RET-3101
+```
+
+What happens:
+
+1. The script normalizes scenario and customer alias arguments.
+2. It maps aliases to customer IDs (`strong` -> `RET-3101`, `weak` / `week` -> `RET-4420`).
+3. It runs one or all scenarios by invoking `python -m workflow_agent.main`.
+4. Each run prints a scenario header plus final model output in the terminal.
+
+Short version:
+
+```text
+run_workflow.sh -> workflow_agent/main.py -> Loop/Parallel/Composition workflow agents -> text output
 ```
 
 ## The Core Relationship Between Files

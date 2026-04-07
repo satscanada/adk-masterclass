@@ -4,11 +4,12 @@ This project shows a small but useful **Google Agent Development Kit (ADK)** lea
 
 It now includes:
 
-- the Python agent modules (including Module 06: a `BaseAgent` keyword router in `custom_agent/`, and Module 07: a multi-agent business banking pipeline in `multi_agent_banking/`)
+- the Python agent modules (including Module 06: a `BaseAgent` keyword router in `custom_agent/`, Module 07: a multi-agent business banking pipeline in `multi_agent_banking/`, and Module 08: workflow orchestration patterns in `workflow_agent/`)
 - a FastAPI layer that exposes those agents over HTTP
 - the original Streamlit UI
 - a React + Vite + Tailwind chat UI that talks to the API
 - `run_banking.sh` — optional CLI for Module 07 (business banking pipeline without the API or UI)
+- `run_workflow.sh` — optional CLI for Module 08 (workflow-agent scenarios without the API or UI)
 
 It is designed for your kind of setup, where you have:
 
@@ -41,6 +42,7 @@ adk-masterclass/
 ├── agent_registry.py
 ├── run.sh
 ├── run_banking.sh
+├── run_workflow.sh
 ├── runstreamlit.sh
 ├── streamlit_app.py
 ├── .env.example
@@ -88,6 +90,11 @@ adk-masterclass/
 │   ├── agent.py
 │   ├── main.py
 │   └── banking_tools.py
+├── workflow_agent/
+│   ├── __init__.py
+│   ├── agent.py
+│   ├── main.py
+│   └── workflow_tools.py
 └── simple_litellm_agent/
     ├── __init__.py
     ├── agent.py
@@ -170,6 +177,18 @@ Keep **`AGENT_HELP.md`** and **`agentHelp.js`** aligned whenever you add or rena
 - `multi_agent_banking/main.py`
   - Blocking `run_prompt(...)` and async `stream_prompt(...)` for the API and React chat UI. Collects output from all three pipeline stages and streams them as a combined response. The streaming path also emits **audit trail events** (agent transitions, tool calls with inputs, tool results with key metrics) that the React UI renders as a live-updating pipeline timeline.
 
+- `workflow_agent/workflow_tools.py`
+  - Module 08: mock retail deposit platform data and tools for workflow scenarios — profile/deposit lookups, AML and velocity checks, exception queue handling for looped reconciliation, and a deterministic `demo_expected_offer` for the final composition decision.
+
+- `workflow_agent/agent.py`
+  - Module 08: builds three workflow patterns:
+    - `LoopAgent` for repeated deposit exception handling (`fetch_next_deposit_exception` + `clear_deposit_exception`)
+    - `ParallelAgent` for concurrent deposit-health and compliance/risk assessments
+    - Composition pattern: `SequentialAgent(ParallelAgent -> LoopAgent -> final_offer_agent)`
+
+- `workflow_agent/main.py`
+  - CLI-focused Module 08 runner with `run_prompt(..., scenario=loop|parallel|composition)`, per-scenario runner caching, and no `agents.json` registration (intentionally no API/UI wiring for this lesson).
+
 - `agents.json`
   - Stores the agent list for the UI
   - Keeps beginner-friendly metadata outside Python code
@@ -194,6 +213,12 @@ Keep **`AGENT_HELP.md`** and **`agentHelp.js`** aligned whenever you add or rena
 
 - `runstreamlit.sh`
   - Optional: starts the Streamlit UI on port **8511** (frees a stale listener first)
+
+- `run_workflow.sh`
+  - Optional: runs Module 08 workflow scenarios from the terminal
+  - Supports `loop`, `parallel`, `composition`, or `all`
+  - Supports customer aliases (`strong`/`healthy` -> `RET-3101`, `weak`/`risk`/`week` -> `RET-4420`; `week` catches a common typo for weak)
+  - Keeps workflow exercises independent of API/React wiring
 
 - `tests/agent_registry_smoke_test.py`
   - Checks that the registry loads the same agents defined in `agents.json`
@@ -404,6 +429,33 @@ Try `CUST-2002` for a customer with a weaker cash-flow profile. In the React cha
 **Docs for this module:** [`AGENT_HELP.md`](AGENT_HELP.md) (Module 07), [`CODEFLOW.md`](CODEFLOW.md) (`multi_agent_banking/*`, `run_banking.sh`, Flow 7–8), and the **Module 07** section in [`adk_python_masterclass.html`](adk_python_masterclass.html). In-app **Help** (Ctrl+H) mirrors `agentHelp.js`.
 
 **CLI note:** `run_banking.sh` uses `tr` for case-insensitive arguments so it works on **macOS default Bash 3.2** (no `${var,,}`).
+
+## Run workflow agents (Module 08 — retail deposit workflows)
+
+This lesson implements ADK workflow orchestrators for a modern retail deposit platform and keeps it CLI-only by design (not registered in `agents.json`).
+
+- **LoopAgent:** cycles through pending deposit exceptions and clears one per iteration.
+- **ParallelAgent:** runs deposit-health analysis and compliance/risk checks concurrently.
+- **Composition Pattern:** nests workflow agents as `ParallelAgent -> LoopAgent -> final_offer_agent`.
+
+The CLI prints an **audit trail** (agent start/end, tool calls with JSON arguments, tool results with short summaries), then the final assistant response. Pass **`--quiet`** to print only the final text. `run_workflow.sh` clears the screen at startup (via `clear`, with a terminal escape fallback).
+
+```bash
+cd /Users/sathishkr/PycharmProjects/adk-masterclass
+
+# Run a single scenario directly:
+./.venv/bin/python -m workflow_agent.main RET-3101 --scenario composition
+./.venv/bin/python -m workflow_agent.main RET-4420 --scenario parallel
+./.venv/bin/python -m workflow_agent.main RET-3101 --scenario loop --quiet
+
+# Or use the helper script:
+./run_workflow.sh                         # all scenarios for RET-3101
+./run_workflow.sh loop weak               # loop scenario for RET-4420
+./run_workflow.sh loop week               # same as weak (typo-friendly alias)
+./run_workflow.sh composition strong      # composition for RET-3101
+```
+
+**Teaching outcomes (mock data):** the composition decision step calls `get_deposit_offer_request`, and the instructions force `Recommended Offer` to match tool field `demo_expected_offer` so outputs stay deterministic (`PREMIUM_PLUS` for `RET-3101`, `SAFE_GROWTH` for `RET-4420`).
 
 ## Run the API
 
