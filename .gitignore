@@ -37,10 +37,18 @@ coverage.xml
 # pyenv / local
 .python-version
 
-# Secrets and local env (use .env.example as the committed template)
+# Secrets and local env (commit only .env.example templates, e.g. root + ui/)
+# `.env` matches that filename in any directory; `.env.*` catches .env.local, .env.production, etc.
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+
+# Private keys / certs (never commit)
+*.pem
+*.p12
+id_rsa
+id_ed25519
+id_ecdsa
 
 # OS
 .DS_Store
