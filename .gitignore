@@ -37,6 +37,11 @@ coverage.xml
 # pyenv / local
 .python-version
 
+# Secrets and local env (use .env.example as the committed template)
+.env
+.env.local
+.env.*.local
+
 # OS
 .DS_Store
 Thumbs.db
