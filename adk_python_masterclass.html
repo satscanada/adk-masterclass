@@ -1,0 +1,3219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ADK Python Masterclass — AI Agent Engineering</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,800;1,9..144,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0b0f;
+    --surface: #10121a;
+    --surface2: #161924;
+    --border: #1e2235;
+    --border2: #2a2f4a;
+    --accent: #5b7fff;
+    --accent2: #ff6b6b;
+    --accent3: #43e97b;
+    --accent4: #f9ca24;
+    --text: #e8eaf6;
+    --text-muted: #8892b0;
+    --text-dim: #4a5280;
+    --code-bg: #0d0f1a;
+    --code-border: #1a1f35;
+    --tag-bg: rgba(91, 127, 255, 0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 16px;
+    line-height: 1.8;
+    overflow-x: hidden;
+  }
+
+  /* ─── Layout ─────────────────────────────────────── */
+  .sidebar {
+    position: fixed;
+    left: 0; top: 0;
+    width: 260px;
+    height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    z-index: 100;
+    padding: 24px 0 40px;
+  }
+
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .sidebar-logo {
+    padding: 0 20px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+
+  .sidebar-logo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    background: var(--tag-bg);
+    border: 1px solid rgba(91,127,255,0.3);
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin-bottom: 8px;
+    letter-spacing: 0.05em;
+  }
+
+  .sidebar-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.3;
+  }
+
+  .sidebar-subtitle {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    margin-top: 3px;
+  }
+
+  .nav-section {
+    padding: 8px 20px 4px;
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.2s;
+    border-left: 2px solid transparent;
+    cursor: pointer;
+  }
+
+  .nav-item:hover, .nav-item.active {
+    color: var(--accent);
+    border-left-color: var(--accent);
+    background: rgba(91,127,255,0.06);
+  }
+
+  .nav-num {
+    font-size: 10px;
+    color: var(--text-dim);
+    min-width: 18px;
+  }
+
+  .main { margin-left: 260px; min-height: 100vh; }
+
+  /* ─── Hero ─────────────────────────────────────────── */
+  .hero {
+    padding: 80px 64px 60px;
+    background: linear-gradient(160deg, #0a0b14 0%, #0d1025 50%, #0a0f1e 100%);
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -100px; right: -100px;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(91,127,255,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -80px; left: 40%;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(67,233,123,0.05) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-eyebrow {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent3);
+    margin-bottom: 16px;
+  }
+
+  .hero h1 {
+    font-size: clamp(36px, 5vw, 58px);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 20px;
+  }
+
+  .hero h1 .highlight {
+    background: linear-gradient(120deg, #5b7fff, #43e97b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-desc {
+    font-size: 18px;
+    color: var(--text-muted);
+    max-width: 600px;
+    font-weight: 300;
+    margin-bottom: 32px;
+    font-style: italic;
+  }
+
+  .hero-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    background: var(--tag-bg);
+    border: 1px solid rgba(91,127,255,0.25);
+    color: var(--accent);
+  }
+
+  .tag.green { background: rgba(67,233,123,0.1); border-color: rgba(67,233,123,0.25); color: var(--accent3); }
+  .tag.red   { background: rgba(255,107,107,0.1); border-color: rgba(255,107,107,0.25); color: var(--accent2); }
+  .tag.yellow{ background: rgba(249,202,36,0.1);  border-color: rgba(249,202,36,0.25);  color: var(--accent4); }
+
+  /* ─── Content ─────────────────────────────────────── */
+  .content { padding: 0 64px 80px; }
+
+  /* ─── Module ──────────────────────────────────────── */
+  .module {
+    padding: 64px 0 48px;
+    border-bottom: 1px solid var(--border);
+    animation: fadeInUp 0.5s ease both;
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .module-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    margin-bottom: 32px;
+  }
+
+  .module-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 6px 10px;
+    border-radius: 8px;
+    white-space: nowrap;
+    margin-top: 6px;
+  }
+
+  .module h2 {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .module-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .module p {
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    font-size: 16px;
+    font-weight: 300;
+    max-width: 800px;
+  }
+
+  .module p strong { color: var(--text); font-weight: 600; }
+
+  /* ─── Concept Box ─────────────────────────────────── */
+  .concept {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 24px 0;
+    position: relative;
+  }
+
+  .concept::before {
+    content: attr(data-label);
+    position: absolute;
+    top: -10px; left: 16px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 2px 10px;
+    border-radius: 4px;
+    background: var(--accent);
+    color: white;
+  }
+
+  .concept.green::before  { background: var(--accent3); color: var(--bg); }
+  .concept.yellow::before { background: var(--accent4); color: var(--bg); }
+  .concept.red::before    { background: var(--accent2); }
+
+  /* ─── Code Block ─────────────────────────────────── */
+  .code-wrapper {
+    margin: 20px 0;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--code-border);
+  }
+
+  .code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface2);
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--code-border);
+  }
+
+  .code-filename {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .code-filename::before { content: '●'; color: var(--accent3); font-size: 8px; }
+
+  .code-lang {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    background: var(--border);
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+
+  pre {
+    background: var(--code-bg);
+    padding: 24px;
+    overflow-x: auto;
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  pre::-webkit-scrollbar { height: 4px; }
+  pre::-webkit-scrollbar-track { background: var(--code-bg); }
+  pre::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  code { font-family: 'JetBrains Mono', monospace; color: var(--text); }
+
+  .kw { color: #ff79c6; }
+  .cl { color: #8be9fd; }
+  .fn { color: #50fa7b; }
+  .st { color: #f1fa8c; }
+  .cm { color: #6272a4; font-style: italic; }
+  .nm { color: #bd93f9; }
+  .an { color: #ffb86c; }
+  .op { color: #ff6b6b; }
+  .dc { color: #43e97b; }
+
+  /* ─── Info Blocks ────────────────────────────────── */
+  .callout {
+    display: flex;
+    gap: 16px;
+    padding: 16px 20px;
+    border-radius: 10px;
+    margin: 20px 0;
+    font-size: 14px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .callout.info   { background: rgba(91,127,255,0.08); border-left: 3px solid var(--accent); }
+  .callout.warn   { background: rgba(249,202,36,0.08); border-left: 3px solid var(--accent4); }
+  .callout.tip    { background: rgba(67,233,123,0.08); border-left: 3px solid var(--accent3); }
+  .callout.danger { background: rgba(255,107,107,0.08); border-left: 3px solid var(--accent2); }
+
+  .callout-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .callout-body { color: var(--text-muted); line-height: 1.6; }
+  .callout-body strong { color: var(--text); display: block; margin-bottom: 4px; }
+  /* Inline emphasis inside callout prose (title strong stays block above) */
+  .callout-body strong.inline-em {
+    display: inline;
+    margin: 0;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  /* ─── Steps ──────────────────────────────────────── */
+  .steps { margin: 24px 0; }
+
+  .step { display: flex; gap: 16px; margin-bottom: 20px; align-items: flex-start; }
+
+  .step-num {
+    width: 28px; height: 28px;
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .step-body { flex: 1; }
+  .step-body strong { font-size: 15px; color: var(--text); display: block; margin-bottom: 4px; }
+  .step-body p { font-size: 14px; color: var(--text-muted); margin: 0; }
+
+  /* ─── Comparison Grid ────────────────────────────── */
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+
+  .compare-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+
+  .compare-card h4 {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent3);
+    margin-bottom: 12px;
+  }
+
+  .compare-card ul {
+    list-style: none;
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-muted);
+  }
+
+  .compare-card ul li { padding: 4px 0; border-bottom: 1px solid var(--border); }
+  .compare-card ul li:last-child { border: none; }
+  .compare-card ul li::before { content: '→ '; color: var(--accent); }
+
+  /* ─── Arch Diagram ───────────────────────────────── */
+  .arch-diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    margin: 24px 0;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .arch-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin: 8px 0;
+    flex-wrap: wrap;
+  }
+
+  .arch-box {
+    background: var(--code-bg);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .arch-box.accent { border-color: var(--accent); color: var(--accent); }
+  .arch-box.green  { border-color: var(--accent3); color: var(--accent3); }
+  .arch-box.yellow { border-color: var(--accent4); color: var(--accent4); }
+  .arch-box.red    { border-color: var(--accent2); color: var(--accent2); }
+
+  .arch-arrow { color: var(--text-dim); font-size: 18px; }
+
+  /* ─── Table ──────────────────────────────────────── */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+  }
+
+  .data-table th {
+    background: var(--surface2);
+    color: var(--text-muted);
+    padding: 10px 16px;
+    text-align: left;
+    border: 1px solid var(--border);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .data-table td {
+    padding: 10px 16px;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    vertical-align: top;
+  }
+
+  .data-table tr:nth-child(even) td { background: rgba(255,255,255,0.01); }
+
+  /* ─── Section Divider ────────────────────────────── */
+  .divider { display: flex; align-items: center; gap: 12px; margin: 40px 0 0; }
+  .divider-line { flex: 1; height: 1px; background: var(--border); }
+  .divider-text {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  /* ─── Setup Card ─────────────────────────────────── */
+  .setup-card {
+    background: linear-gradient(135deg, rgba(91,127,255,0.06), rgba(67,233,123,0.04));
+    border: 1px solid rgba(91,127,255,0.2);
+    border-radius: 14px;
+    padding: 28px;
+    margin: 24px 0;
+  }
+
+  .setup-card h3 {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .setup-card h3 .icon { font-size: 20px; }
+
+  /* ─── Footer ─────────────────────────────────────── */
+  .footer {
+    padding: 40px 64px;
+    border-top: 1px solid var(--border);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 28px 0 12px;
+    letter-spacing: -0.01em;
+  }
+
+  h4 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--accent);
+    font-family: 'Space Mono', monospace;
+    margin: 20px 0 8px;
+    letter-spacing: 0.04em;
+  }
+
+  inline-code, .ic {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--accent3);
+  }
+
+  @media (max-width: 1024px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; }
+    .hero, .content { padding-left: 32px; padding-right: 32px; }
+    .compare-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════ SIDEBAR ════════════════════ -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-badge">🐍 ADK Python</div>
+    <div class="sidebar-title">AI Agent Masterclass</div>
+    <div class="sidebar-subtitle">google-adk · Python 3.10+ · LiteLLM</div>
+  </div>
+
+  <div class="nav-section">Setup</div>
+  <a class="nav-item" href="#setup"><span class="nav-num">00</span> Prerequisites & Setup</a>
+
+  <div class="nav-section">Agents</div>
+  <a class="nav-item" href="#basic-agent"><span class="nav-num">01</span> Basic Simple Agent</a>
+  <a class="nav-item" href="#multi-agent"><span class="nav-num">02</span> Multiple Agents</a>
+  <a class="nav-item" href="#agent-team"><span class="nav-num">03</span> Agent Team</a>
+  <a class="nav-item" href="#streaming-agent"><span class="nav-num">04</span> Streaming Agent</a>
+  <a class="nav-item" href="#llm-agent"><span class="nav-num">05</span> LLM Agent Deep Dive</a>
+  <a class="nav-item" href="#custom-agent"><span class="nav-num">06</span> Custom Agent</a>
+  <a class="nav-item" href="#multi-agent-systems"><span class="nav-num">07</span> Multi-Agent Systems</a>
+  <a class="nav-item" href="#workflow-agents"><span class="nav-num">08</span> Workflow Agents</a>
+
+  <div class="nav-section">Tools</div>
+  <a class="nav-item" href="#function-tools"><span class="nav-num">09</span> Function Tools</a>
+  <a class="nav-item" href="#mcp-tools"><span class="nav-num">10</span> MCP Tools (Client)</a>
+  <a class="nav-item" href="#build-mcp"><span class="nav-num">11</span> Build MCP Server</a>
+
+  <div class="nav-section">Sessions</div>
+  <a class="nav-item" href="#session-memory"><span class="nav-num">12</span> In-Memory Sessions</a>
+  <a class="nav-item" href="#session-db"><span class="nav-num">13</span> DB Persistence</a>
+
+  <div class="nav-section">Layer 3 · Adaptive Intelligence</div>
+  <a class="nav-item" href="#feedback-loops"><span class="nav-num">14</span> Feedback Loops</a>
+  <a class="nav-item" href="#outcome-tracking"><span class="nav-num">15</span> Outcome Tracking</a>
+  <a class="nav-item" href="#persistent-memory"><span class="nav-num">16</span> Persistent Behavioral Memory</a>
+  <a class="nav-item" href="#mcp-intelligence"><span class="nav-num">17</span> MCP for Intelligence</a>
+  <a class="nav-item" href="#adaptive-prompting"><span class="nav-num">18</span> Adaptive Prompting</a>
+  <a class="nav-item" href="#llm-judge"><span class="nav-num">19</span> LLM as Judge vs Guardrails</a>
+  <a class="nav-item" href="#decision-optimization"><span class="nav-num">20</span> Decision Optimization Loop</a>
+  <a class="nav-item" href="#explore-exploit"><span class="nav-num">21</span> Exploration vs Exploitation</a>
+  <a class="nav-item" href="#memory-architectures"><span class="nav-num">22</span> Agent Memory Architectures</a>
+  <a class="nav-item" href="#multi-agent-learning"><span class="nav-num">23</span> Multi-Agent Learning</a>
+  <a class="nav-item" href="#production-patterns"><span class="nav-num">24</span> Production Patterns</a>
+
+  <div class="nav-section">Model</div>
+  <a class="nav-item" href="#litellm-ref"><span class="nav-num">↳</span> LiteLLM Reference</a>
+</nav>
+
+<!-- ════════════════════ MAIN ════════════════════════ -->
+<main class="main">
+
+  <!-- ─── HERO ─── -->
+  <div class="hero">
+    <div class="hero-eyebrow">Lead AI Educator Series · Google ADK for Python</div>
+    <h1>Build AI Agents with<br><span class="highlight">ADK Python + LiteLLM</span></h1>
+    <p class="hero-desc">A comprehensive, hands-on masterclass covering every ADK agent type — from a single-agent hello world to multi-agent hierarchies, streaming, custom BaseAgent subclasses, workflow orchestrators, MCP toolsets, building your own MCP server, and full session persistence. <strong>All LLM access exclusively through LiteLLM.</strong></p>
+    <div class="hero-tags">
+      <span class="tag">Python 3.10+</span>
+      <span class="tag">asyncio</span>
+      <span class="tag">google-adk</span>
+      <span class="tag green">LiteLlm wrapper</span>
+      <span class="tag green">McpToolset</span>
+      <span class="tag yellow">MCP Protocol</span>
+      <span class="tag yellow">Session Persistence</span>
+      <span class="tag red">No Direct LLM Access</span>
+    </div>
+  </div>
+
+  <!-- ─── CONTENT ─── -->
+  <div class="content">
+
+    <!-- ══════════════════════════════ MODULE 00 ══ -->
+    <div id="setup" class="module">
+      <div class="module-header">
+        <span class="module-num">MODULE 00</span>
+        <div>
+          <h2>Prerequisites & Project Setup</h2>
+          <div class="module-meta">pip · venv · .env · project structure · golden rule</div>
+        </div>
+      </div>
+
+      <p>ADK Python is a pure Python library — no proxy, no separate server process. The cardinal rule: <strong>all LLM traffic routes through the <span class="ic">LiteLlm</span> wrapper</strong>. Never pass a raw model string or import a provider SDK directly. This gives you provider-agnostic routing, cost tracking, fallbacks, and retries for free.</p>
+
+      <div class="callout danger">
+        <div class="callout-icon">🚨</div>
+        <div class="callout-body">
+          <strong>Golden Rule — Never bypass LiteLLM</strong>
+          Every agent in this course uses <span class="ic">model=LiteLlm(model="openai/gpt-4o-mini")</span>. Never pass a raw string like <span class="ic">model="gemini-2.5-flash"</span> directly — that bypasses LiteLLM and hard-codes a provider. One line change in <span class="ic">LiteLlm(model=...)</span> swaps your entire model stack.
+        </div>
+      </div>
+
+      <div class="arch-diagram">
+        <strong style="color:var(--text); display:block; margin-bottom:16px;">ADK Python Architecture — All via LiteLLM</strong>
+        <div class="arch-row">
+          <div class="arch-box accent">LlmAgent / BaseAgent<br><span style="font-size:10px">google-adk</span></div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box red">LiteLlm(model="...")<br><span style="font-size:10px">google.adk.models.lite_llm<br>wraps litellm Python lib</span></div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box yellow">LiteLLM Python<br><span style="font-size:10px">translation layer<br>100+ providers</span></div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box green">Any LLM<br><span style="font-size:10px">openai / anthropic<br>gemini / ollama / …</span></div>
+        </div>
+        <div style="margin-top:16px; font-size:11px; color:var(--text-dim); line-height:1.8">
+          Runner manages event loops &nbsp;·&nbsp;
+          InMemorySessionService / DatabaseSessionService persist state &nbsp;·&nbsp;
+          McpToolset bridges MCP ↔ ADK &nbsp;·&nbsp;
+          LiteLlm wrapper = your only model entry point
+        </div>
+      </div>
+
+      <div class="setup-card">
+        <h3><span class="icon">⚙️</span> System Requirements & Installation</h3>
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <strong>Python 3.10 or later</strong>
+              <p>Run <span class="ic">python --version</span> to verify. Use pyenv to manage versions: <span class="ic">pyenv install 3.12</span></p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <strong>Create and activate a virtual environment</strong>
+              <p><span class="ic">python -m venv .venv</span> then <span class="ic">source .venv/bin/activate</span> (macOS/Linux) or <span class="ic">.venv\Scripts\activate</span> (Windows)</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <strong>Install core packages</strong>
+              <p><span class="ic">pip install google-adk litellm python-dotenv aiosqlite</span> — aiosqlite is only needed for Module 13 (DB persistence).</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <strong>Install MCP package (Modules 10–11 only)</strong>
+              <p><span class="ic">pip install mcp</span> — plus Node.js + npx from nodejs.org if using npm-distributed MCP servers.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">5</div>
+            <div class="step-body">
+              <strong>Configure API keys in .env</strong>
+              <p>Copy <span class="ic">.env.example</span> to <span class="ic">.env</span> and add your provider keys. Load with <span class="ic">from dotenv import load_dotenv; load_dotenv()</span> at the top of every file.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h3>Project Structure</h3>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">Recommended project layout</div>
+          <span class="code-lang">SHELL</span>
+        </div>
+        <pre><code>adk_masterclass/
+├── .env                    <span class="cm"># API keys — never commit to git</span>
+├── .env.example            <span class="cm"># template — commit this</span>
+├── adk_masterclass.py      <span class="cm"># all 13 modules in one file</span>
+├── my_mcp_server.py        <span class="cm"># auto-generated by Module 11</span>
+├── sessions.db             <span class="cm"># auto-created by Module 13 (SQLite)</span>
+└── requirements.txt        <span class="cm"># pinned deps</span>
+
+<span class="cm"># requirements.txt</span>
+google-adk
+litellm
+python-dotenv
+aiosqlite          <span class="cm"># Module 13: SQLite session persistence</span>
+mcp                <span class="cm"># Modules 10–11: MCP tool integration</span></code></pre>
+      </div>
+
+      <h3>LiteLLM Provider Strings — Quick Reference</h3>
+      <table class="data-table">
+        <thead>
+          <tr><th>Provider</th><th>LiteLlm model string</th><th>Env var needed</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>OpenAI</td><td><span class="ic">openai/gpt-4o-mini</span></td><td>OPENAI_API_KEY</td></tr>
+          <tr><td>Anthropic</td><td><span class="ic">anthropic/claude-3-haiku-20240307</span></td><td>ANTHROPIC_API_KEY</td></tr>
+          <tr><td>Google Gemini</td><td><span class="ic">gemini/gemini-1.5-flash</span></td><td>GEMINI_API_KEY</td></tr>
+          <tr><td>Azure OpenAI</td><td><span class="ic">azure/your-deployment-name</span></td><td>AZURE_API_KEY + AZURE_API_BASE</td></tr>
+          <tr><td>Ollama (local)</td><td><span class="ic">ollama/llama3.2</span></td><td>none (local server)</td></tr>
+          <tr><td>Any OpenAI-compat</td><td><span class="ic">openai/model-name</span> + api_base=</td><td>varies</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout info">
+        <div class="callout-icon">💡</div>
+        <div class="callout-body">
+          <strong>ADK Security Advisory — LiteLLM Supply Chain (March 2026)</strong>
+          Unauthorized code was found in LiteLLM versions 1.82.7 and 1.82.8 on PyPI. If you use ADK with <span class="ic">eval</span> or <span class="ic">extensions</span> extras, update immediately: <span class="ic">pip install google-adk litellm --upgrade</span>. Rotate all secrets if you installed during that window.
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════ MODULE 01 ══ -->
+    <div id="basic-agent" class="module">
+      <div class="module-header">
+        <span class="module-num">MODULE 01</span>
+        <div>
+          <h2>Basic Simple Agent</h2>
+          <div class="module-meta">Agent · LiteLlm · Runner · InMemorySessionService · run()</div>
+        </div>
+      </div>
+
+      <p>The repo's Module 01 is the smallest practical ADK setup: one <span class="ic">Agent</span> (ADK's alias for <span class="ic">LlmAgent</span>), one <span class="ic">LiteLlm(...)</span> model wrapper, one cached <span class="ic">Runner</span>, and one <span class="ic">InMemorySessionService</span>. The implemented path is intentionally simple: <span class="ic">run_prompt(...)</span> calls blocking <span class="ic">runner.run(...)</span> and then extracts the final assistant text from ADK events.</p>
+
+      <div class="concept" data-label="Key Concept">
+        <strong style="color:var(--text)">What Module 01 Actually Includes</strong><br>
+        <span style="color:var(--text-muted); font-size:14px; font-family:'JetBrains Mono', monospace">
+          <span class="kw">config.py</span> → loads <span class="ic">.env</span>, normalizes <span class="ic">api_base</span>, builds settings<br>
+          <span class="kw">agent.py</span> → creates one <span class="ic">Agent(...)</span> backed by <span class="ic">LiteLlm(...)</span><br>
+          <span class="kw">main.py</span> → caches one <span class="ic">Runner</span> with <span class="ic">auto_create_session=True</span><br>
+          <span class="kw">run_prompt(...)</span> → sends one user message and returns one final string<br>
+          <span class="kw">extract_final_text(...)</span> → walks ADK events until the final response appears
+        </span>
+      </div>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">simple_litellm_agent/agent.py + main.py</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">from</span> functools <span class="kw">import</span> lru_cache
+<span class="kw">from</span> google.adk.agents <span class="kw">import</span> <span class="cl">Agent</span>
+<span class="kw">from</span> google.adk.models.lite_llm <span class="kw">import</span> <span class="cl">LiteLlm</span>
+<span class="kw">from</span> google.adk.runners <span class="kw">import</span> <span class="cl">Runner</span>
+<span class="kw">from</span> google.adk.sessions <span class="kw">import</span> <span class="cl">InMemorySessionService</span>
+<span class="kw">from</span> google.genai <span class="kw">import</span> types
+
+<span class="kw">def</span> <span class="fn">create_agent</span>(settings) -> <span class="cl">Agent</span>:
+    <span class="kw">return</span> <span class="cl">Agent</span>(
+        name=<span class="st">"root_agent"</span>,
+        description=<span class="st">"A tiny Google ADK agent that calls a LiteLLM-compatible endpoint."</span>,
+        instruction=settings.agent_instruction,
+        model=<span class="cl">LiteLlm</span>(
+            model=settings.litellm_model,
+            api_base=settings.api_base,
+            api_key=settings.api_key,
+            max_tokens=settings.max_tokens,
+        ),
+    )
+
+@lru_cache(maxsize=<span class="nm">1</span>)
+<span class="kw">def</span> <span class="fn">build_runner</span>():
+    settings = <span class="fn">get_settings</span>()
+    <span class="kw">return</span> <span class="cl">Runner</span>(
+        agent=<span class="fn">create_agent</span>(settings),
+        app_name=settings.app_name,
+        session_service=<span class="cl">InMemorySessionService</span>(),
+        auto_create_session=<span class="nm">True</span>,
+    )
+
+<span class="kw">def</span> <span class="fn">run_prompt</span>(prompt: <span class="cl">str</span>) -> <span class="cl">str</span>:
+    runner = <span class="fn">build_runner</span>()
+    message = types.<span class="cl">Content</span>(role=<span class="st">"user"</span>, parts=[types.<span class="cl">Part</span>(text=prompt)])
+    events = runner.<span class="fn">run</span>(user_id=<span class="st">"demo-user"</span>, session_id=<span class="st">"..."</span>, new_message=message)
+    <span class="kw">return</span> <span class="fn">extract_final_text</span>(events)</code></pre>
+      </div>
+
+      <div class="callout tip">
+        <div class="callout-icon">✅</div>
+        <div class="callout-body">
+          <strong>Module 01 stays intentionally blocking</strong>
+          The repo also includes a small timing mode (<span class="ic">--timing</span> or <span class="ic">ADK_SHOW_TIMING=1</span>) so you can see runner setup, run call, and event-consumption costs without changing the lesson logic.
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════ MODULE 02 ══ -->
+    <div id="multi-agent" class="module">
+      <div class="module-header">
+        <span class="module-num">MODULE 02</span>
+        <div>
+          <h2>Multiple Independent Agents</h2>
+          <div class="module-meta">two Agent instances · separate Runner objects · same topic · combined markdown</div>
+        </div>
+      </div>
+
+      <p>The implemented Module 02 is deliberately simple: two independent agents receive the <strong>same topic</strong>, but each gets a different prompt shape. One writes exactly 2 short paragraphs; the other returns exactly 3 bullet points. They do not delegate, they do not share state, and they are not registered as sub-agents under a coordinator.</p>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">mulit_agent/agent.py + main.py</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">def</span> <span class="fn">create_writer_agent</span>(settings) -> <span class="cl">Agent</span>:
+    <span class="kw">return</span> <span class="cl">Agent</span>(
+        name=<span class="st">"writer_agent"</span>,
+        description=<span class="st">"Writes exactly 2 short paragraphs for the topic from chat."</span>,
+        instruction=<span class="st">"Respond with exactly 2 short paragraphs. No headings or bullets."</span>,
+        model=<span class="fn">_build_model</span>(settings),
+    )
+
+<span class="kw">def</span> <span class="fn">create_bullet_agent</span>(settings) -> <span class="cl">Agent</span>:
+    <span class="kw">return</span> <span class="cl">Agent</span>(
+        name=<span class="st">"bullet_agent"</span>,
+        description=<span class="st">"Returns exactly 3 bullet points for the topic from chat."</span>,
+        instruction=<span class="st">"Return exactly 3 concise bullet points. Each bullet must start with '- '."</span>,
+        model=<span class="fn">_build_model</span>(settings),
+    )
+
+<span class="kw">def</span> <span class="fn">run_prompt</span>(topic: <span class="cl">str</span>) -> <span class="cl">str</span>:
+    runtime = <span class="fn">build_runtimes</span>()
+    base_session_id = <span class="st">"..."</span>
+
+    writer_text = <span class="fn">_run_agent</span>(
+        runtime.writer_runner,
+        <span class="fn">_build_writer_prompt</span>(topic),
+        session_id=<span class="st">f"{base_session_id}-writer"</span>,
+    )
+    bullet_text = <span class="fn">_run_agent</span>(
+        runtime.bullet_runner,
+        <span class="fn">_build_bullet_prompt</span>(topic),
+        session_id=<span class="st">f"{base_session_id}-bullets"</span>,
+    )
+
+    <span class="kw">return</span> <span class="st">"\n\n"</span>.<span class="fn">join</span>([
+        <span class="st">"### Agent 1: Paragraph Writer"</span>,
+        writer_text,
+        <span class="st">"### Agent 2: Bullet Summary"</span>,
+        bullet_text,
+    ])</code></pre>
+      </div>
+
+      <div class="callout info">
+        <div class="callout-icon">ℹ️</div>
+        <div class="callout-body">
+          <strong>Independent means separate runs, not delegation</strong>
+          Module 02 is not a coordinator pattern yet. It is just two separate runners, two separate prompts, and one combined final markdown answer.
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════ MODULE 03 ══ -->
+    <div id="agent-team" class="module">
+      <div class="module-header">
+        <span class="module-num">MODULE 03</span>
+        <div>
+          <h2>Deterministic Orchestrator</h2>
+          <div class="module-meta">explicit agent_type · deterministic routing · one selected runner · no sub_agents</div>
+        </div>
+      </div>
+
+      <p>The repo's Module 03 does <strong>not</strong> use an LLM coordinator or <span class="ic">sub_agents</span>. Instead, it reads an explicit <span class="ic">agent_type:</span> line from the prompt, validates it against <span class="ic">explain</span>, <span class="ic">bullet</span>, and <span class="ic">quiz</span>, strips the request text, and runs exactly one matching specialist runner.</p>
+
+      <div class="arch-diagram">
+        <strong style="color:var(--text); display:block; margin-bottom:16px;">Deterministic Routing Architecture</strong>
+        <div class="arch-row">
+          <div class="arch-box accent">Prompt with<br><span style="font-size:10px">agent_type + request</span></div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box accent">Parser / Validator<br><span style="font-size:10px">extracts agent_type<br>builds routed prompt</span></div>
+        </div>
+        <div class="arch-row" style="margin-top:4px">
+          <div class="arch-arrow" style="margin-right:60px">↙</div>
+          <div class="arch-arrow" style="margin-left:60px">↘</div>
+        </div>
+        <div class="arch-row">
+          <div class="arch-box green">explain / bullet / quiz<br><span style="font-size:10px">one specialist runner only</span></div>
+          <div style="width:40px"></div>
+          <div class="arch-box yellow">final answer<br><span style="font-size:10px">prefixed with route label</span></div>
+        </div>
+      </div>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">orchestrate_agent/main.py</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code>SUPPORTED_AGENT_TYPES = (<span class="st">"explain"</span>, <span class="st">"bullet"</span>, <span class="st">"quiz"</span>)
+
+<span class="kw">def</span> <span class="fn">extract_agent_type</span>(prompt: <span class="cl">str</span>) -> <span class="cl">str</span>:
+    <span class="cm"># requires a line like: agent_type: explain</span>
+    ...
+
+<span class="kw">def</span> <span class="fn">extract_user_request</span>(prompt: <span class="cl">str</span>) -> <span class="cl">str</span>:
+    <span class="cm"># strips the routing line and optional request: prefix</span>
+    ...
+
+<span class="kw">def</span> <span class="fn">_build_routed_prompt</span>(agent_type: <span class="cl">str</span>, user_request: <span class="cl">str</span>) -> <span class="cl">str</span>:
+    <span class="kw">return</span> (
+        <span class="st">f"Agent type intent: {agent_type}\n"</span>
+        <span class="st">f"User request: {user_request}\n\n"</span>
+        <span class="st">"Stay within your assigned agent role."</span>
+    )
+
+<span class="kw">def</span> <span class="fn">run_prompt</span>(prompt: <span class="cl">str</span>) -> <span class="cl">str</span>:
+    agent_type = <span class="fn">extract_agent_type</span>(prompt)
+    user_request = <span class="fn">extract_user_request</span>(prompt)
+    runner = runtime.runners_by_type[agent_type]
+    final_text = <span class="fn">_run_agent</span>(runner, <span class="fn">_build_routed_prompt</span>(agent_type, user_request), ...)
+    <span class="kw">return</span> <span class="st">f"### Orchestrator route: {agent_type}\n{final_text}"</span></code></pre>
+      </div>
+
+      <div class="callout warn">
+        <div class="callout-icon">⚠️</div>
+        <div class="callout-body">
+          <strong>Prompt format determines routing quality</strong>
+          This orchestrator is deterministic, so the user must include an explicit <span class="ic">agent_type:</span> line. If it is missing or unsupported, the code raises a clear error instead of guessing.
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════ MODULE 04 ══ -->
+    <div id="streaming-agent" class="module">
+      <div class="module-header">
+        <span class="module-num">MODULE 04</span>
+        <div>
+          <h2>Streaming Agent</h2>
+          <div class="module-meta">run_async · stream_prompt · blocking fallback · chunked text output</div>
+        </div>
+      </div>
+
+      <p>The implemented Module 04 keeps the same single-agent stack as Module 01, but adds an async <span class="ic">stream_prompt(...)</span> helper that loops over <span class="ic">runner.run_async(...)</span> and yields text chunks as they arrive. The same module also keeps a normal blocking <span class="ic">run_prompt(...)</span> path so non-streaming callers can still get one final string.</p>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">streaming_agent/main.py</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">def</span> <span class="fn">run_prompt</span>(prompt: <span class="cl">str</span>) -> <span class="cl">str</span>:
+    runtime = <span class="fn">build_runner</span>()
+    events = runtime.runner.<span class="fn">run</span>(...)
+    <span class="kw">return</span> <span class="fn">extract_final_text</span>(events)
+
+<span class="kw">async def</span> <span class="fn">stream_prompt</span>(prompt: <span class="cl">str</span>):
+    runtime = <span class="fn">build_runner</span>()
+    message = <span class="fn">_user_message</span>(prompt)
+
+    <span class="kw">async for</span> event <span class="kw">in</span> runtime.runner.<span class="fn">run_async</span>(
+        user_id=<span class="st">"demo-user"</span>,
+        session_id=<span class="st">"..."</span>,
+        new_message=message,
+    ):
+        <span class="kw">if</span> <span class="fn">getattr</span>(event, <span class="st">"author"</span>, <span class="nm">None</span>) == <span class="st">"user"</span>:
+            <span class="kw">continue</span>
+        <span class="kw">if</span> <span class="kw">not</span> event.content <span class="kw">or</span> <span class="kw">not</span> event.content.parts:
+            <span class="kw">continue</span>
+        <span class="kw">for</span> part <span class="kw">in</span> event.content.parts:
+            chunk = <span class="fn">getattr</span>(part, <span class="st">"text"</span>, <span class="nm">None</span>) <span class="kw">or</span> <span class="st">""</span>
+            <span class="kw">if</span> chunk:
+                <span class="kw">yield</span> chunk</code></pre>
+      </div>
+
+      <div class="callout info">
+        <div class="callout-icon">💡</div>
+        <div class="callout-body">
+          <strong>Streaming is added without changing the core agent pattern</strong>
+          The main difference from Module 01 is the async generator wrapper. The underlying agent, runner caching, settings loading, and session handling remain the same.
+        </div>
+      </div>
+    </div>
+
+    <div class="setup-card">
+      <h3><span class="icon">🧩</span> Side Project — Shared API + UIs</h3>
+      <p>The browser and API work in this repo are a <strong>side project layered on top of the lesson modules</strong>, not part of the core Module 01-04 mechanics. The learning modules stay focused on Python agent patterns; the side project makes them easier to try in a reusable chat app.</p>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Register modules in <span class="ic">agents.json</span></strong>
+            <p>Each entry defines <span class="ic">key</span>, <span class="ic">title</span>, <span class="ic">description</span>, <span class="ic">prompt_hint</span>, <span class="ic">module</span>, and optional <span class="ic">supports_streaming</span>.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong><span class="ic">agent_registry.py</span> imports the module</strong>
+            <p>It calls <span class="ic">run_prompt(...)</span> for every registered agent, and wires <span class="ic">stream_prompt(...)</span> when streaming is enabled.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong><span class="ic">api_app.py</span> exposes the agents over HTTP</strong>
+            <p><span class="ic">GET /api/agents</span> lists modules, <span class="ic">POST /api/chat</span> runs blocking responses, and <span class="ic">POST /api/chat/stream</span> emits NDJSON chunks for streaming agents.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Optional UIs consume that API</strong>
+            <p>The repo includes the original Streamlit UI and a React + Vite chat UI. Both are convenience layers for trying the modules; they are not the lesson itself.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════ MODULE 05 ══ -->
+    <div id="llm-agent" class="module">
+      <div class="module-header">
+        <span class="module-num">MODULE 05</span>
+        <div>
+          <h2>LLM Agent — Full Feature Breakdown</h2>
+          <div class="module-meta">tools · output_key · multi-turn · Python functions as tools</div>
+        </div>
+      </div>
+
+      <p><span class="ic">LlmAgent</span> is the ADK workhorse. Plain Python functions in the <span class="ic">tools=[]</span> list are auto-converted to tool schemas — ADK reads type hints and docstrings to generate the JSON schema the LLM uses to call them. Use <span class="ic">output_key</span> to persist the agent's final response into session state for downstream agents to read.</p>
+
+      <div class="callout info">
+        <div class="callout-icon" aria-hidden="true">📦</div>
+        <div class="callout-body">
+          <strong>Module 05 in this repo</strong>
+          Implementations live under <span class="ic">advanced_agent/</span>: Meteosource <span class="ic">place_id</span> weather (<span class="ic">WEATHER_API_KEY</span> in <span class="ic">.env</span>) plus a Celsius→Fahrenheit helper tool. Select <strong class="inline-em">Weather Assistant (tools)</strong> in the React chat after registering in <span class="ic">agents.json</span>.
+        </div>
+      </div>
+
+      <div class="concept green" data-label="Tool Choice">
+        <strong style="color:var(--text)">When should the LLM call a tool?</strong><br>
+        <span style="color:var(--text-muted); font-size:14px; font-family:'JetBrains Mono', monospace">
+          • Call a tool when the answer depends on fresh or external data (weather, stock price, DB lookup)<br>
+          • Answer directly when the user asks for formatting, summarization, or explanation of data already present<br>
+          • Prefer narrow tool responsibilities: one tool fetches data, another transforms or formats it<br>
+          • Put the rule in the instruction so the model does not guess when a real lookup is required
+        </span>
+      </div>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">advanced_agent/weather_tools.py — tool functions</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">def</span> <span class="fn">fetch_current_weather</span>(place_id: <span class="cl">str</span>) -> dict:
+    <span class="dc">"""Meteosource GET .../point?place_id=...&amp;sections=current&amp;units=metric&amp;key=WEATHER_API_KEY."""</span>
+    <span class="cm"># Returns {"status":"success","summary":...,"temperature_celsius":...} or {"status":"error",...}</span>
+
+<span class="kw">def</span> <span class="fn">celsius_to_fahrenheit_display</span>(celsius: <span class="cl">float</span>) -> dict:
+    <span class="dc">"""Convert °C to °F for the final reply. Args: celsius: value from the weather tool."""</span>
+    fahrenheit = celsius * <span class="nm">9</span>/<span class="nm">5</span> + <span class="nm">32</span>
+    <span class="kw">return</span> {<span class="st">"status"</span>: <span class="st">"success"</span>, <span class="st">"celsius"</span>: ..., <span class="st">"fahrenheit"</span>: ..., <span class="st">"formatted"</span>: <span class="st">"..."</span>}</code></pre>
+      </div>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">advanced_agent/agent.py — agent with tools</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code>agent = <span class="cl">Agent</span>(
+    name=<span class="st">"weather_assistant"</span>,
+    model=<span class="cl">LiteLlm</span>(model=<span class="st">"openai/gemini-3-flash-preview"</span>, ...),
+    description=<span class="st">"Weather-only assistant with Meteosource + conversion tools."</span>,
+    instruction=<span class="st">"""You are a weather-only assistant. Refuse non-weather questions with one fixed sentence.
+For weather: infer place_id, call fetch_current_weather, then celsius_to_fahrenheit_display."""</span>,
+    tools=[<span class="fn">fetch_current_weather</span>, <span class="fn">celsius_to_fahrenheit_display</span>],
+    output_key=<span class="st">"last_weather_reply"</span>,
+)</code></pre>
+      </div>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">module_05_multi_turn.txt — same session, two turns</div>
+          <span class="code-lang">TEXT</span>
+        </div>
+        <pre><code>Turn 1 user: What is the weather in calgary?
+Turn 1 agent: calls fetch_current_weather("calgary")
+Turn 1 agent: calls celsius_to_fahrenheit_display(0.5)
+Turn 1 final: Calgary is 0.5 °C (32.9 °F), light snow, wind ESE 16.4 km/h.
+
+Turn 2 user: What about toronto?
+Turn 2 agent: infers the topic is still weather from the same chat session
+Turn 2 agent: calls fetch_current_weather("toronto")
+Turn 2 final: ...fresh weather answer for toronto...</code></pre>
+      </div>
+
+      <table class="data-table">
+        <thead><tr><th>Rule</th><th>Reason</th></tr></thead>
+        <tbody>
+          <tr><td>Type-hint all parameters and return type</td><td>ADK reads these to generate the JSON schema the LLM uses to call your tool</td></tr>
+          <tr><td>Write a clear docstring with Args: section</td><td>The LLM reads the docstring to decide when and how to call the tool</td></tr>
+          <tr><td>Return a dict always</td><td>The LLM reads return keys to understand results; non-dicts cause schema issues</td></tr>
+          <tr><td>Return {"status":"error","message":"..."} on failure</td><td>Lets the LLM gracefully handle errors and retry or inform the user</td></tr>
+          <tr><td>One responsibility per tool</td><td>Keeps the LLM's tool selection accurate; avoid Swiss-army-knife tools</td></tr>
+          <tr><td>Normalize external API inputs</td><td>Lowercasing slugs, trimming spaces, and validating required env vars makes tool calls more reliable</td></tr>
+          <tr><td>Shape raw API data into stable fields</td><td>The model should read predictable keys like temperature_celsius, summary, and wind_dir instead of vendor-specific nested JSON</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+
+    <!-- ══════════════════════════════ MODULE 06 ══ -->
+    <div id="custom-agent" class="module">
+      <div class="module-header">
+        <span class="module-num">MODULE 06</span>
+        <div>
+          <h2>Custom Agent — BaseAgent Subclass</h2>
+          <div class="module-meta">BaseAgent · _run_async_impl · InvocationContext · yield Event</div>
+        </div>
+      </div>
+
+      <p>When <span class="ic">LlmAgent</span> isn't enough, subclass <span class="ic">BaseAgent</span> and implement <span class="ic">_run_async_impl</span>. You control everything: when to call LLMs, when to use rule-based logic, when to delegate to child agents, when to stop. Use cases: complex state machines, hybrid rule-based + LLM logic, agents with internal routing that doesn't need an LLM call to decide.</p>
+
+      <p><strong>Module 06 in this repo</strong> lives under <span class="ic">custom_agent/</span>. Register <span class="ic">"key": "custom_agent"</span> with <span class="ic">"module": "custom_agent.main"</span> and <span class="ic">"supports_streaming": true</span> in <span class="ic">agents.json</span> — the FastAPI registry and React chat pick it up automatically (same pattern as Modules 04–05). In the UI, choose <strong>Custom Agent (keyword router)</strong>; blocking calls use <span class="ic">POST /api/chat</span>, token streaming uses <span class="ic">POST /api/chat/stream</span>.</p>
+
+      <p>The implementation uses <span class="ic">KeywordRoutingAgent</span> (<span class="ic">BaseAgent</span>) with two <span class="ic">LlmAgent</span> children. Both specialists use <span class="ic">LiteLlm(...)</span> built from <span class="ic">simple_litellm_agent.config.get_settings()</span> — the same <span class="ic">LITELLM_*</span> <span class="ic">.env</span> as the rest of this project. Routing uses a <span class="ic">TECH_KEYWORDS</span> <span class="ic">frozenset</span> (core terms plus DB/cloud tooling in the file); <span class="ic">user_text_for_routing_parts(...)</span> normalizes user text the same way in the router and in <span class="ic">routing_banner_markdown(prompt)</span>, so the visible route line always matches the branch that ran.</p>
+
+      <div class="concept" data-label="Key Concept">
+        <strong style="color:var(--text)">_run_async_impl contract</strong><br>
+        <span style="color:var(--text-muted); font-size:14px; font-family: 'JetBrains Mono', monospace">
+          • Receives <span class="cl">InvocationContext</span> (ctx) — contains user_content, session, state<br>
+          • Must be an <span class="kw">async</span> generator — use <span class="kw">yield</span> to emit Events<br>
+          • Delegate to child agents with <span class="kw">async with</span> <span class="cl">Aclosing</span>(child.<span class="fn">run_async</span>(ctx)) <span class="kw">as</span> agen: <span class="kw">async for</span> event <span class="kw">in</span> agen: <span class="kw">yield</span> event<br>
+          • Declare child agents as Pydantic model fields (not in __init__)<br>
+          • <strong>Chat visibility:</strong> <span class="ic">custom_agent/main.py</span> prepends <span class="ic">routing_banner_markdown(prompt)</span> to each reply (<span class="ic">**Route:** Tech specialist …</span> or <span class="ic">General specialist …</span>) so the Streamlit and React UIs show which child handled the turn
+        </span>
+      </div>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">custom_agent/agent.py (structure)</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">from</span> google.adk.agents <span class="kw">import</span> <span class="cl">BaseAgent</span>, <span class="cl">LlmAgent</span>
+<span class="kw">from</span> google.adk.agents.invocation_context <span class="kw">import</span> <span class="cl">InvocationContext</span>
+<span class="kw">from</span> google.adk.utils.context_utils <span class="kw">import</span> <span class="cl">Aclosing</span>
+<span class="kw">from</span> google.genai <span class="kw">import</span> <span class="cl">types</span>
+
+<span class="cl">TECH_KEYWORDS</span> = <span class="fn">frozenset</span>({<span class="st">"python"</span>, <span class="st">"code"</span>, <span class="st">"api"</span>, <span class="st">"docker"</span>, <span class="st">"postgres"</span>, <span class="st">"redis"</span>})  <span class="cm"># + more in repo</span>
+
+<span class="kw">def</span> <span class="fn">user_text_for_routing_parts</span>(parts) -> <span class="cl">str</span>:
+    <span class="kw">if</span> <span class="kw">not</span> parts: <span class="kw">return</span> <span class="st">""</span>
+    <span class="kw">return</span> <span class="st">" "</span>.<span class="fn">join</span>(p.text <span class="kw">or</span> <span class="st">""</span> <span class="kw">for</span> p <span class="kw">in</span> parts <span class="kw">if</span> <span class="fn">hasattr</span>(p, <span class="st">"text"</span>)).<span class="fn">lower</span>()
+
+<span class="kw">def</span> <span class="fn">routing_banner_markdown</span>(prompt: <span class="cl">str</span>) -> <span class="cl">str</span>:
+    <span class="cm"># Same keyword logic as the router — prepended to assistant text in main.py</span>
+    ut = <span class="fn">user_text_for_routing_parts</span>([types.<span class="cl">Part</span>(text=prompt)])
+    is_tech = <span class="fn">any</span>(kw <span class="kw">in</span> ut <span class="kw">for</span> kw <span class="kw">in</span> <span class="cl">TECH_KEYWORDS</span>)
+    <span class="kw">return</span> (<span class="st">"**Route:** Tech specialist (`tech_specialist`) · keyword match\n\n"</span>
+            <span class="kw">if</span> is_tech <span class="kw">else</span> <span class="st">"**Route:** General specialist (`general_specialist`) · no tech keywords matched\n\n"</span>)
+
+<span class="kw">class</span> <span class="cl">KeywordRoutingAgent</span>(<span class="cl">BaseAgent</span>):
+    tech_agent: <span class="cl">LlmAgent</span>
+    general_agent: <span class="cl">LlmAgent</span>
+
+    <span class="kw">async def</span> <span class="fn">_run_async_impl</span>(<span class="kw">self</span>, ctx: <span class="cl">InvocationContext</span>):
+        user_text = <span class="st">""</span>
+        <span class="kw">if</span> ctx.user_content <span class="kw">and</span> ctx.user_content.parts:
+            user_text = <span class="fn">user_text_for_routing_parts</span>(ctx.user_content.parts)
+        is_tech = <span class="fn">any</span>(kw <span class="kw">in</span> user_text <span class="kw">for</span> kw <span class="kw">in</span> <span class="cl">TECH_KEYWORDS</span>)
+        chosen = <span class="kw">self</span>.tech_agent <span class="kw">if</span> is_tech <span class="kw">else</span> <span class="kw">self</span>.general_agent
+        <span class="kw">async with</span> <span class="cl">Aclosing</span>(chosen.<span class="fn">run_async</span>(ctx)) <span class="kw">as</span> agen:
+            <span class="kw">async for</span> event <span class="kw">in</span> agen: <span class="kw">yield</span> event
+
+<span class="cm"># create_agent() wires two LlmAgent(...) with _build_llm(get_settings()) — same LiteLLM .env as Module 01</span></code></pre>
+      </div>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">custom_agent/main.py — runner + route banner</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">from</span> .agent <span class="kw">import</span> <span class="fn">create_agent</span>, <span class="fn">routing_banner_markdown</span>
+
+<span class="kw">def</span> <span class="fn">run_prompt</span>(prompt: <span class="cl">str</span>, user_id: <span class="cl">str</span>, session_id: <span class="cl">str</span> | <span class="cl">None</span>) -> <span class="cl">str</span>:
+    <span class="cm"># runner.run(...) → events</span>
+    <span class="kw">return</span> <span class="fn">routing_banner_markdown</span>(prompt) + <span class="fn">extract_final_text</span>(events)
+
+<span class="kw">async def</span> <span class="fn">stream_prompt</span>(prompt: <span class="cl">str</span>, ...) -> <span class="cl">AsyncIterator</span>[<span class="cl">str</span>]:
+    <span class="kw">yield</span> <span class="fn">routing_banner_markdown</span>(prompt)   <span class="cm"># first chunk: **Route:** … in the chat bubble</span>
+    <span class="kw">async for</span> event <span class="kw">in</span> runtime.runner.<span class="fn">run_async</span>(user_id=..., session_id=..., new_message=message):
+        <span class="cm"># yield text parts like Module 04 / 05</span></code></pre>
+      </div>
+
+      <div class="callout info">
+        <div class="callout-icon" aria-hidden="true">💡</div>
+        <div class="callout-body">
+          <strong>Why <span class="ic">run_async</span> instead of <span class="ic">_run_async_impl</span> on the child?</strong>
+          Calling <span class="ic">child.run_async(ctx)</span> runs the same path the framework uses for sub-agents (callbacks, tracing). The repo’s <span class="ic">custom_agent/agent.py</span> follows this pattern. <span class="ic">custom_agent/main.py</span> mirrors Module 04’s <span class="ic">run_prompt</span> / <span class="ic">stream_prompt</span>, and prepends <span class="ic">routing_banner_markdown</span> so the chat bubble shows whether <span class="ic">tech_specialist</span> or <span class="ic">general_specialist</span> answered — without a second LLM call.
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════ MODULE 07 ══ -->
+    <div id="multi-agent-systems" class="module">
+      <div class="module-header">
+        <span class="module-num">MODULE 07</span>
+        <div>
+          <h2>Multi-Agent Systems — Business Banking</h2>
+          <div class="module-meta">SequentialAgent · output_key chaining · session.state as message bus · mock tools</div>
+        </div>
+      </div>
+
+      <p>A multi-agent system (MAS) is a network of cooperating agents. In this module we build a <strong>business banking overdraft approval pipeline</strong> using ADK's <span class="ic">SequentialAgent</span>. Three specialist <span class="ic">LlmAgent</span> children run in order; each writes its analysis to <span class="ic">session.state</span> via <span class="ic">output_key</span>, and the next agent reads those results through <span class="ic">{state_key}</span> interpolation in its instruction.</p>
+
+      <div class="concept green" data-label="Use Case" style="margin-bottom:24px;">
+        <p style="margin:0"><strong>Business Banking Overdraft Approval</strong> — A customer applies for an overdraft facility. The pipeline evaluates their financial health across three dimensions before rendering a decision:</p>
+        <ul style="margin:10px 0 0 18px; color:var(--text-muted);">
+          <li><strong>Deposit Agent</strong> — Analyzes deposit transactions and daily balance movement over the last month</li>
+          <li><strong>Bill Agent</strong> — Reviews completed bill payments and upcoming obligations for the next month</li>
+          <li><strong>Decision Agent</strong> — Reads both analyses from session state, then recommends APPROVE, CONDITIONAL APPROVE, or DENY</li>
+        </ul>
+      </div>
+
+      <div class="arch-diagram">
+        <strong style="color:var(--text); display:block; margin-bottom:16px;">SequentialAgent Pipeline — Overdraft Approval</strong>
+        <div class="arch-row">
+          <div class="arch-box accent">Customer ID<br><span style="font-size:10px">e.g. CUST-1001</span></div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box accent">banking_overdraft_pipeline<br><span style="font-size:10px">SequentialAgent orchestrator</span></div>
+        </div>
+        <div style="text-align:center; color:var(--text-dim); font-family:'JetBrains Mono',monospace; font-size:11px; margin:8px 0;">↓ step 1</div>
+        <div class="arch-row">
+          <div class="arch-box green">deposit_agent<br><span style="font-size:10px">tools: get_monthly_deposits, get_balance_movement<br>output_key="deposit_analysis"</span></div>
+        </div>
+        <div style="text-align:center; color:var(--text-dim); font-family:'JetBrains Mono',monospace; font-size:11px; margin:8px 0;">↓ step 2</div>
+        <div class="arch-row">
+          <div class="arch-box yellow">bill_agent<br><span style="font-size:10px">tools: get_completed_bills, get_upcoming_bills<br>output_key="bill_analysis"</span></div>
+        </div>
+        <div style="text-align:center; color:var(--text-dim); font-family:'JetBrains Mono',monospace; font-size:11px; margin:8px 0;">↓ step 3 (reads state from steps 1 &amp; 2)</div>
+        <div class="arch-row">
+          <div class="arch-box" style="border-color:var(--accent2); color:var(--accent2);">decision_agent<br><span style="font-size:10px">tool: get_overdraft_request<br>reads {deposit_analysis} + {bill_analysis}<br>output_key="overdraft_decision"</span></div>
+        </div>
+      </div>
+
+      <div class="concept" data-label="Key Pattern" style="margin-top:24px;">
+        <p style="margin:0"><span class="ic">output_key</span> is the glue — each agent writes its result to <span class="ic">session.state[key]</span>. The decision agent's instruction uses <span class="ic">{deposit_analysis}</span> and <span class="ic">{bill_analysis}</span> which ADK automatically interpolates from state. No manual wiring needed.</p>
+      </div>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">multi_agent_banking/banking_tools.py</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="cm"># Mock banking data — two demo customers</span>
+<span class="kw">def</span> <span class="fn">get_monthly_deposits</span>(customer_id: <span class="cl">str</span>) -> <span class="cl">dict</span>:
+    <span class="st">"""Return deposit transactions for the last month and month-to-date."""</span>
+    data = _get_customer(customer_id)
+    deposits = data[<span class="st">"deposits"</span>]
+    total = <span class="fn">sum</span>(d[<span class="st">"amount"</span>] <span class="kw">for</span> d <span class="kw">in</span> deposits)
+    <span class="kw">return</span> {
+        <span class="st">"customer_name"</span>: data[<span class="st">"name"</span>],
+        <span class="st">"total_deposits"</span>: total,
+        <span class="st">"deposit_count"</span>: <span class="fn">len</span>(deposits),
+        <span class="st">"average_deposit"</span>: <span class="fn">round</span>(total / <span class="fn">max</span>(<span class="fn">len</span>(deposits), <span class="nu">1</span>), <span class="nu">2</span>),
+        <span class="st">"deposits"</span>: deposits,   <span class="cm"># list of {date, amount, description}</span>
+    }
+
+<span class="kw">def</span> <span class="fn">get_balance_movement</span>(customer_id: <span class="cl">str</span>) -> <span class="cl">dict</span>:
+    <span class="st">"""Return daily balance snapshots showing cash-flow movement."""</span>
+    <span class="cm"># returns min_balance, max_balance, average_balance, snapshots</span>
+
+<span class="kw">def</span> <span class="fn">get_completed_bills</span>(customer_id: <span class="cl">str</span>) -> <span class="cl">dict</span>:
+    <span class="st">"""Return bills the customer already paid in the last month."""</span>
+
+<span class="kw">def</span> <span class="fn">get_upcoming_bills</span>(customer_id: <span class="cl">str</span>) -> <span class="cl">dict</span>:
+    <span class="st">"""Return scheduled and pending bills for the next ~30 days."""</span>
+
+<span class="kw">def</span> <span class="fn">get_overdraft_request</span>(customer_id: <span class="cl">str</span>) -> <span class="cl">dict</span>:
+    <span class="st">"""Return the customer's account details and requested overdraft limit."""</span></code></pre>
+      </div>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">multi_agent_banking/agent.py</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">from</span> google.adk.agents <span class="kw">import</span> <span class="cl">LlmAgent</span>, <span class="cl">SequentialAgent</span>
+
+deposit_agent = <span class="cl">LlmAgent</span>(
+    name=<span class="st">"deposit_agent"</span>,
+    model=llm,
+    description=<span class="st">"Analyzes customer deposit transactions and balance movement."</span>,
+    instruction=<span class="st">"You are a bank deposit analyst. Call get_monthly_deposits and "</span>
+                <span class="st">"get_balance_movement, then produce a cash-flow health assessment."</span>,
+    tools=[<span class="fn">get_monthly_deposits</span>, <span class="fn">get_balance_movement</span>],
+    output_key=<span class="st">"deposit_analysis"</span>,   <span class="cm"># → session.state["deposit_analysis"]</span>
+)
+
+bill_agent = <span class="cl">LlmAgent</span>(
+    name=<span class="st">"bill_agent"</span>,
+    model=llm,
+    description=<span class="st">"Analyzes customer bill payments and upcoming obligations."</span>,
+    instruction=<span class="st">"You are a bank bill payment analyst. Call get_completed_bills and "</span>
+                <span class="st">"get_upcoming_bills, then assess the liability outlook."</span>,
+    tools=[<span class="fn">get_completed_bills</span>, <span class="fn">get_upcoming_bills</span>],
+    output_key=<span class="st">"bill_analysis"</span>,       <span class="cm"># → session.state["bill_analysis"]</span>
+)
+
+decision_agent = <span class="cl">LlmAgent</span>(
+    name=<span class="st">"decision_agent"</span>,
+    model=llm,
+    description=<span class="st">"Makes the final overdraft approval or denial recommendation."</span>,
+    instruction=<span class="st">"You are a senior credit officer. Read:\n"</span>
+                <span class="st">"  - Deposit analysis: {deposit_analysis}\n"</span>
+                <span class="st">"  - Bill analysis: {bill_analysis}\n"</span>
+                <span class="st">"Produce: Decision (APPROVE / CONDITIONAL / DENY), "</span>
+                <span class="st">"Recommended Limit, Risk Rating, Key Factors."</span>,
+    tools=[<span class="fn">get_overdraft_request</span>],
+    output_key=<span class="st">"overdraft_decision"</span>,
+)
+
+pipeline = <span class="cl">SequentialAgent</span>(
+    name=<span class="st">"banking_overdraft_pipeline"</span>,
+    description=<span class="st">"Module 07: deposit → bill → decision pipeline."</span>,
+    sub_agents=[deposit_agent, bill_agent, decision_agent],
+)</code></pre>
+      </div>
+
+      <p><strong>Module 07 in this repo</strong> lives under <span class="ic">multi_agent_banking/</span>. Register <span class="ic">"key": "multi_agent_banking"</span> with <span class="ic">"module": "multi_agent_banking.main"</span> and <span class="ic">"supports_streaming": true</span> in <span class="ic">agents.json</span> — the FastAPI registry and React chat pick it up automatically. Optional <span class="ic">"suggestions"</span> entries drive <strong>Quick start</strong> chips in the chat when the thread is empty. In the UI, choose <strong>Business Banking (multi-agent)</strong>; use suggestions or type <span class="ic">CUST-1001</span> (healthy → teaching outcome <strong>APPROVE</strong>) or <span class="ic">CUST-2002</span> (weaker → <strong>DENY</strong>). The tool <span class="ic">get_overdraft_request</span> returns <span class="ic">demo_expected_decision</span> so the decision agent’s markdown matches those outcomes.</p>
+
+      <div class="compare-grid" style="margin-top:24px;">
+        <div class="compare-card">
+          <h4>CUST-1001 — Acme Corp</h4>
+          <ul>
+            <li>10 deposits totalling $52,300</li>
+            <li>Avg balance ~$14,500 (healthy)</li>
+            <li>$33,900 paid in bills last month</li>
+            <li>$34,430 upcoming next month</li>
+            <li>Requesting $25,000 overdraft</li>
+          </ul>
+        </div>
+        <div class="compare-card">
+          <h4>CUST-2002 — Sunrise Bakery</h4>
+          <ul>
+            <li>5 deposits totalling $4,920</li>
+            <li>Avg balance ~$1,100 (tight)</li>
+            <li>$7,000 paid in bills last month</li>
+            <li>$7,000 upcoming next month</li>
+            <li>Requesting $10,000 overdraft</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout tip" style="margin-top:20px;">
+        <div class="callout-icon">&#128161;</div>
+        <div class="callout-body">
+          <strong>Why SequentialAgent?</strong> Each specialist must complete its analysis before the next agent can read the results from <span class="ic">session.state</span>. The pipeline guarantees ordering without any LLM-based routing — <span class="ic">SequentialAgent</span> itself uses no model, only its children do.
+        </div>
+      </div>
+
+      <div class="concept blue" data-label="Audit Trail" style="margin-top:24px;">
+        <p style="margin:0"><strong>Live Pipeline Audit Trail</strong> — The React UI shows a collapsible timeline of every agent transition and tool invocation as it happens during streaming. This gives full observability into multi-agent pipelines without opening a debugger.</p>
+        <div style="margin:14px 0 0 18px; color:var(--text-muted); font-size:0.93em; line-height:1.8;">
+          <p style="margin:0 0 8px 0;"><strong>How it works (three layers):</strong></p>
+          <ol style="margin:0; padding-left:18px;">
+            <li><strong>Python (<span class="ic">main.py</span>)</strong> — <span class="ic">stream_prompt()</span> ignores events with no <span class="ic">content.parts</span> before tracking agents (avoids empty shell events confusing attribution). It resolves the active sub-agent with <span class="ic">event.branch</span> (leaf name) when <span class="ic">author</span> is missing or <span class="ic">user</span>, and falls back to a tool-name→agent map so every tool row still maps to <span class="ic">deposit_agent</span>, <span class="ic">bill_agent</span>, or <span class="ic">decision_agent</span>. <span class="ic">agent_start</span>/<span class="ic">agent_end</span> and <span class="ic">tool_call</span>/<span class="ic">tool_result</span> sentinels carry JSON-serialized input and output summaries.</li>
+            <li><strong>API (<span class="ic">api_app.py</span>)</strong> — The NDJSON generator detects the <span class="ic">\x00AUDIT:</span> prefix and emits <span class="ic">{"type":"audit", "event":"tool_call", ...}</span> instead of a text delta.</li>
+            <li><strong>React (<span class="ic">App.jsx</span>)</strong> — Audit events are attached to the current assistant message. <span class="ic">AuditTrail</span> groups rows by <span class="ic">evt.agent</span> and shows each tool’s full JSON arguments and JSON output summary in scrollable blocks — updating live during streaming.</li>
+          </ol>
+          <p style="margin:12px 0 0 0;"><strong>What the user sees:</strong></p>
+          <ul style="margin:4px 0 0 0; padding-left:18px;">
+            <li>Each agent step shows a running/done status indicator</li>
+            <li>Each tool row shows the function name plus <strong>Input (arguments)</strong> and <strong>Output (tool return)</strong> as formatted JSON</li>
+            <li>Output summaries are derived in Python from known keys per tool (e.g. deposit counts, balances, <span class="ic">demo_expected_decision</span> for the overdraft tool)</li>
+            <li>The trail is collapsible and appears above the assistant's text response</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="concept green" data-label="CLI" style="margin-top:24px;">
+        <p style="margin:0"><strong>Run without the UI</strong> — From the repo root, <span class="ic">run_banking.sh</span> wraps <span class="ic">python -m multi_agent_banking.main</span> for the two teaching scenarios:</p>
+        <div class="code-wrapper" style="margin-top:12px; margin-bottom:0;">
+          <div class="code-header">
+            <div class="code-filename">run_banking.sh</div>
+            <span class="code-lang">BASH</span>
+          </div>
+          <pre><code>./run_banking.sh              <span class="cm"># CUST-1001 then CUST-2002</span>
+./run_banking.sh approve      <span class="cm"># healthy profile only</span>
+./run_banking.sh deny         <span class="cm"># weaker profile only</span></code></pre>
+        </div>
+        <p style="margin:12px 0 0 0; color:var(--text-muted); font-size:0.93em;">The script lowercases the first argument with <span class="ic">tr</span> so it works on macOS default Bash 3.2 (no Bash 4 <span class="ic">${var,,}</span>). Terminal output includes the same audit-style lines as the module’s <span class="ic">__main__</span> (agent transitions, tool calls, tool results).</p>
+      </div>
+
+      <div class="concept yellow" data-label="Smoke Test" style="margin-top:24px;">
+        <p style="margin:0"><strong>Verify the pipeline</strong> without a real LLM. The smoke test starts a mock OpenAI server, runs the pipeline for both demo customers, and confirms the pipeline banner, tool data, and combined output:</p>
+        <div class="code-wrapper" style="margin-top:12px; margin-bottom:0;">
+          <div class="code-header">
+            <div class="code-filename">tests/multi_agent_banking_smoke_test.py</div>
+            <span class="code-lang">BASH</span>
+          </div>
+          <pre><code><span class="cm"># Run the smoke test (no real LLM needed — uses a mock server on port 4015)</span>
+./.venv/bin/python tests/multi_agent_banking_smoke_test.py
+
+<span class="cm"># What it checks:</span>
+<span class="cm">#   1. CUST-1001 and CUST-2002 both produce &gt;100-char output</span>
+<span class="cm">#   2. Pipeline banner contains all three agent names</span>
+<span class="cm">#   3. Tool functions return correct mock data (deposit counts, totals, balances)</span>
+<span class="cm">#   4. Invalid customer ID surfaces a clear error message</span></code></pre>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════ MODULE 08 ══ -->
+    <div id="workflow-agents" class="module">
+      <div class="module-header">
+        <span class="module-num">MODULE 08</span>
+        <div>
+          <h2>Workflow Agents</h2>
+          <div class="module-meta">SequentialAgent · LoopAgent · ParallelAgent · no-LLM orchestrators</div>
+        </div>
+      </div>
+
+      <p>ADK's workflow agents are <strong>pure orchestrators — they use no LLM themselves</strong>. They control execution flow; LLM work happens only in their sub-agents (which still use LiteLlm).</p>
+
+      <div class="compare-grid">
+        <div class="compare-card">
+          <h4>SequentialAgent</h4>
+          <ul>
+            <li>Runs sub-agents in order (pipeline)</li>
+            <li>Output of step N → session.state → step N+1</li>
+            <li>Use for: ETL, content pipelines, multi-step workflows</li>
+            <li>Steps share state via output_key</li>
+          </ul>
+        </div>
+        <div class="compare-card">
+          <h4>LoopAgent</h4>
+          <ul>
+            <li>Repeats sub-agents until escalate_to_parent() is called</li>
+            <li>Set max_iterations as a safety cap</li>
+            <li>Use for: retry loops, polling, iterative refinement</li>
+            <li>Agent escalates when goal is achieved</li>
+          </ul>
+        </div>
+        <div class="compare-card">
+          <h4>ParallelAgent</h4>
+          <ul>
+            <li>Runs all sub-agents concurrently (asyncio)</li>
+            <li>Results collected when all finish</li>
+            <li>Use for: fan-out, simultaneous API calls</li>
+            <li>Each sub-agent gets its own output_key</li>
+          </ul>
+        </div>
+        <div class="compare-card">
+          <h4>Composition Pattern</h4>
+          <ul>
+            <li>Workflow agents nest inside each other</li>
+            <li>SequentialAgent can contain ParallelAgents</li>
+            <li>All sub-agent LLM calls still use LiteLlm</li>
+            <li>Workflow agents themselves have no model= field</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">module_08_workflow_agents.py</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">from</span> google.adk.agents <span class="kw">import</span> <span class="cl">SequentialAgent</span>, <span class="cl">LoopAgent</span>, <span class="cl">ParallelAgent</span>
+
+<span class="cm"># ── Sequential: topic → expand → write paragraph ────────────────</span>
+pipeline = <span class="cl">SequentialAgent</span>(
+    name=<span class="st">"content_pipeline"</span>,
+    description=<span class="st">"Expands topic then writes a paragraph."</span>,
+    sub_agents=[
+        <span class="cl">LlmAgent</span>(
+            name=<span class="st">"idea_expander"</span>,
+            model=<span class="cl">LiteLlm</span>(model=<span class="st">"openai/gpt-4o-mini"</span>),
+            instruction=<span class="st">"Output exactly 3 numbered key points about the topic."</span>,
+            output_key=<span class="st">"expanded_points"</span>,  <span class="cm"># ← next agent reads this</span>
+        ),
+        <span class="cl">LlmAgent</span>(
+            name=<span class="st">"paragraph_writer"</span>,
+            model=<span class="cl">LiteLlm</span>(model=<span class="st">"openai/gpt-4o-mini"</span>),
+            instruction=<span class="st">"Write ONE paragraph from the 3 points in session state 'expanded_points'."</span>,
+            output_key=<span class="st">"final_paragraph"</span>,
+        ),
+    ],
+)
+
+<span class="cm"># ── Parallel: writer + analyst run simultaneously ────────────────</span>
+parallel = <span class="cl">ParallelAgent</span>(
+    name=<span class="st">"parallel_content"</span>,
+    description=<span class="st">"Runs writer and analyst concurrently."</span>,
+    sub_agents=[
+        <span class="cl">LlmAgent</span>(
+            name=<span class="st">"parallel_writer"</span>,
+            model=<span class="cl">LiteLlm</span>(model=<span class="st">"openai/gpt-4o-mini"</span>),
+            instruction=<span class="st">"Write ONE creative tagline for the topic. Max 15 words."</span>,
+            output_key=<span class="st">"tagline"</span>,
+        ),
+        <span class="cl">LlmAgent</span>(
+            name=<span class="st">"parallel_analyst"</span>,
+            model=<span class="cl">LiteLlm</span>(model=<span class="st">"openai/gpt-4o-mini"</span>),
+            instruction=<span class="st">"List exactly 3 business benefits. Bullet points only."</span>,
+            output_key=<span class="st">"benefits"</span>,
+        ),
+    ],
+)
+
+<span class="cm"># ── Loop: repeat until agent escalates ──────────────────────────</span>
+loop = <span class="cl">LoopAgent</span>(
+    name=<span class="st">"refinement_loop"</span>,
+    description=<span class="st">"Iteratively refines until goal met."</span>,
+    sub_agents=[<span class="fn">build_refiner_agent</span>()],
+    max_iterations=<span class="nm">5</span>,  <span class="cm"># safety cap</span>
+)</code></pre>
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════ MODULE 09 ══ -->
+    <div id="function-tools" class="module">
+      <div class="module-header">
+        <span class="module-num">MODULE 09</span>
+        <div>
+          <h2>Custom Function Tools</h2>
+          <div class="module-meta">FunctionTool · ToolContext · session.state · zero boilerplate</div>
+        </div>
+      </div>
+
+      <p>ADK converts plain Python functions to tools with zero boilerplate — just add them to <span class="ic">tools=[]</span>. ADK reads type hints and docstrings to auto-generate the JSON schema. For tools that need session state access, add a <span class="ic">tool_context: ToolContext</span> parameter — ADK injects it automatically; the LLM never sees it.</p>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">module_09_function_tools.py — basic tools</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">def</span> <span class="fn">calculate_bmi</span>(weight_kg: <span class="cl">float</span>, height_m: <span class="cl">float</span>) -> dict:
+    <span class="dc">"""Calculates Body Mass Index (BMI).
+    Args:
+        weight_kg: Weight in kilograms.
+        height_m: Height in meters.
+    Returns: dict with bmi value and category."""</span>
+    <span class="kw">if</span> height_m <= <span class="nm">0</span>:
+        <span class="kw">return</span> {<span class="st">"status"</span>: <span class="st">"error"</span>, <span class="st">"message"</span>: <span class="st">"Height must be positive"</span>}
+    bmi = weight_kg / (height_m ** <span class="nm">2</span>)
+    category = (
+        <span class="st">"Underweight"</span> <span class="kw">if</span> bmi < <span class="nm">18.5</span> <span class="kw">else</span>
+        <span class="st">"Normal"</span>      <span class="kw">if</span> bmi < <span class="nm">25</span>   <span class="kw">else</span>
+        <span class="st">"Overweight"</span>  <span class="kw">if</span> bmi < <span class="nm">30</span>   <span class="kw">else</span> <span class="st">"Obese"</span>
+    )
+    <span class="kw">return</span> {<span class="st">"status"</span>: <span class="st">"success"</span>, <span class="st">"bmi"</span>: <span class="fn">round</span>(bmi, <span class="nm">1</span>), <span class="st">"category"</span>: category}</code></pre>
+      </div>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">module_09_function_tools.py — ToolContext-aware tool</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">from</span> google.adk.tools.tool_context <span class="kw">import</span> <span class="cl">ToolContext</span>
+
+<span class="kw">def</span> <span class="fn">save_preference</span>(key: <span class="cl">str</span>, value: <span class="cl">str</span>, tool_context: <span class="cl">ToolContext</span>) -> dict:
+    <span class="dc">"""Saves a user preference to session state.
+    Args:
+        key: preference name (e.g. 'language').
+        value: preference value (e.g. 'French').
+        tool_context: ADK context — injected automatically, hidden from LLM.
+    Returns: confirmation dict."""</span>
+    <span class="cm"># tool_context.state is the session state dict</span>
+    tool_context.state[<span class="st">f"pref_{key}"</span>] = value
+    <span class="kw">return</span> {<span class="st">"status"</span>: <span class="st">"success"</span>, <span class="st">"saved"</span>: {key: value}}
+
+<span class="kw">def</span> <span class="fn">get_preference</span>(key: <span class="cl">str</span>, tool_context: <span class="cl">ToolContext</span>) -> dict:
+    <span class="dc">"""Retrieves a saved user preference from session state.
+    Args:
+        key: preference name to retrieve.
+        tool_context: ADK context — injected automatically."""</span>
+    value = tool_context.state.<span class="fn">get</span>(<span class="st">f"pref_{key}"</span>)
+    <span class="kw">return</span> {<span class="st">"status"</span>: <span class="st">"success"</span> <span class="kw">if</span> value <span class="kw">else</span> <span class="st">"not_found"</span>,
+            <span class="st">"key"</span>: key, <span class="st">"value"</span>: value}
+
+<span class="cm"># Agent wires it all together</span>
+agent = <span class="cl">LlmAgent</span>(
+    name=<span class="st">"tools_agent"</span>,
+    model=<span class="cl">LiteLlm</span>(model=<span class="st">"openai/gpt-4o-mini"</span>),
+    instruction=<span class="st">"Use calculate_bmi, save_preference, get_preference as needed."</span>,
+    tools=[<span class="fn">calculate_bmi</span>, <span class="fn">save_preference</span>, <span class="fn">get_preference</span>],
+    <span class="cm"># tool_context is injected by ADK — the LLM never sees it</span>
+)</code></pre>
+      </div>
+
+      <div class="callout tip">
+        <div class="callout-icon">✅</div>
+        <div class="callout-body">
+          <strong>ToolContext is invisible to the LLM</strong>
+          ADK automatically injects <span class="ic">ToolContext</span> when it detects the parameter name in your function signature. The LLM sees only the other typed parameters. This is how you give tools session state access without leaking framework internals to the model.
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════ MODULE 10 ══ -->
+    <div id="mcp-tools" class="module">
+      <div class="module-header">
+        <span class="module-num">MODULE 10</span>
+        <div>
+          <h2>MCP Tools — Using External MCP Servers</h2>
+          <div class="module-meta">McpToolset · StdioConnectionParams · SseConnectionParams · tool_filter</div>
+        </div>
+      </div>
+
+      <p>MCP (Model Context Protocol) is an open standard for exposing tools to LLMs. ADK's <span class="ic">McpToolset</span> lets your agent use any MCP-compliant server as a toolset. Place <span class="ic">McpToolset</span> directly in <span class="ic">tools=[]</span> — ADK handles connection, tool discovery, call proxying, and cleanup.</p>
+
+      <div class="arch-diagram">
+        <strong style="color:var(--text); display:block; margin-bottom:16px;">MCP Integration — ADK as MCP Client</strong>
+        <div class="arch-row">
+          <div class="arch-box accent">LlmAgent<br><span style="font-size:10px">tools=[McpToolset(...)]</span></div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box red">McpToolset<br><span style="font-size:10px">discovers + proxies tools</span></div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box yellow">StdioConnectionParams<br><span style="font-size:10px">spawns subprocess</span></div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box green">npx @mcp/server-filesystem<br><span style="font-size:10px">or any MCP server</span></div>
+        </div>
+      </div>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">module_10_mcp_tools.py — filesystem MCP server</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">from</span> google.adk.agents <span class="kw">import</span> <span class="cl">LlmAgent</span>
+<span class="kw">from</span> google.adk.models.lite_llm <span class="kw">import</span> <span class="cl">LiteLlm</span>
+<span class="kw">from</span> google.adk.tools.mcp_tool <span class="kw">import</span> <span class="cl">McpToolset</span>
+<span class="kw">from</span> google.adk.tools.mcp_tool.mcp_session_manager <span class="kw">import</span> <span class="cl">StdioConnectionParams</span>
+<span class="kw">from</span> mcp <span class="kw">import</span> <span class="cl">StdioServerParameters</span>
+
+agent = <span class="cl">LlmAgent</span>(
+    name=<span class="st">"filesystem_agent"</span>,
+    model=<span class="cl">LiteLlm</span>(model=<span class="st">"openai/gpt-4o-mini"</span>),
+    description=<span class="st">"File system assistant using MCP filesystem server."</span>,
+    instruction=<span class="st">"Use MCP tools to list directories and read files."</span>,
+    tools=[
+        <span class="cl">McpToolset</span>(
+            connection_params=<span class="cl">StdioConnectionParams</span>(
+                server_params=<span class="cl">StdioServerParameters</span>(
+                    command=<span class="st">"npx"</span>,
+                    args=[
+                        <span class="st">"-y"</span>,
+                        <span class="st">"@modelcontextprotocol/server-filesystem"</span>,
+                        <span class="st">"/absolute/path/to/your/folder"</span>,  <span class="cm"># MUST be absolute</span>
+                    ],
+                ),
+            ),
+            <span class="cm"># Optional: expose only specific tools from the server</span>
+            tool_filter=[<span class="st">"list_directory"</span>, <span class="st">"read_file"</span>],
+        )
+    ],
+)</code></pre>
+      </div>
+
+      <h3>Remote MCP Server (SSE / HTTP)</h3>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">module_10_mcp_tools.py — remote SSE server</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">from</span> google.adk.tools.mcp_tool.mcp_session_manager <span class="kw">import</span> <span class="cl">SseConnectionParams</span>
+
+<span class="cm"># For remote MCP servers (deployed to Cloud Run, etc.)</span>
+agent = <span class="cl">LlmAgent</span>(
+    name=<span class="st">"remote_mcp_agent"</span>,
+    model=<span class="cl">LiteLlm</span>(model=<span class="st">"openai/gpt-4o-mini"</span>),
+    tools=[
+        <span class="cl">McpToolset</span>(
+            connection_params=<span class="cl">SseConnectionParams</span>(
+                url=<span class="st">"https://your-mcp-server.run.app/sse"</span>,
+                headers={<span class="st">"Authorization"</span>: <span class="st">"Bearer your-token"</span>},
+            ),
+        )
+    ],
+)</code></pre>
+      </div>
+
+      <table class="data-table">
+        <thead><tr><th>Connection Type</th><th>Use When</th><th>Params class</th></tr></thead>
+        <tbody>
+          <tr><td>Stdio</td><td>Local npm/python MCP server process</td><td><span class="ic">StdioConnectionParams</span></td></tr>
+          <tr><td>SSE (Server-Sent Events)</td><td>Remote HTTP MCP server</td><td><span class="ic">SseConnectionParams</span></td></tr>
+          <tr><td>Streamable HTTP</td><td>Production, stateless, scalable</td><td><span class="ic">StreamableHTTPConnectionParams</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+
+    <!-- ══════════════════════════════ MODULE 11 ══ -->
+    <div id="build-mcp" class="module">
+      <div class="module-header">
+        <span class="module-num">MODULE 11</span>
+        <div>
+          <h2>Build Your Own MCP Server</h2>
+          <div class="module-meta">mcp library · list_tools · call_tool · stdio_server · then consume with McpToolset</div>
+        </div>
+      </div>
+
+      <p>Build a custom MCP server to wrap internal APIs, databases, or any Python logic — then expose it to <em>any</em> MCP-compatible client (ADK agents, Claude Desktop, LangChain, etc.). The server runs as a separate process; ADK's <span class="ic">McpToolset</span> spawns it and talks to it over stdio.</p>
+
+      <div class="compare-grid">
+        <div class="compare-card">
+          <h4>Part A — Build the Server</h4>
+          <ul>
+            <li>Create my_mcp_server.py</li>
+            <li>Implement @app.list_tools() handler</li>
+            <li>Implement @app.call_tool() handler</li>
+            <li>Run as asyncio stdio server</li>
+          </ul>
+        </div>
+        <div class="compare-card">
+          <h4>Part B — Use in ADK Agent</h4>
+          <ul>
+            <li>McpToolset + StdioConnectionParams</li>
+            <li>command="python3" args=[server_path]</li>
+            <li>ADK spawns the server automatically</li>
+            <li>Works identical to any other McpToolset</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">my_mcp_server.py — complete custom MCP server</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="dc">#!/usr/bin/env python3
+"""Custom MCP server exposing: add_numbers, get_timestamp.
+Run: python my_mcp_server.py (or let McpToolset spawn it)
+Install: pip install mcp"""</span>
+
+<span class="kw">import</span> asyncio, json
+<span class="kw">from</span> datetime <span class="kw">import</span> datetime, timezone
+<span class="kw">from</span> mcp <span class="kw">import</span> types <span class="kw">as</span> mcp_types
+<span class="kw">from</span> mcp.server.lowlevel <span class="kw">import</span> <span class="cl">Server</span>, <span class="cl">NotificationOptions</span>
+<span class="kw">from</span> mcp.server.models <span class="kw">import</span> <span class="cl">InitializationOptions</span>
+<span class="kw">import</span> mcp.server.stdio
+
+app = <span class="cl">Server</span>(<span class="st">"my-custom-mcp-server"</span>)
+
+<span class="an">@app.list_tools()</span>
+<span class="kw">async def</span> <span class="fn">list_tools</span>() -> list[mcp_types.<span class="cl">Tool</span>]:
+    <span class="dc">"""Advertise tools to MCP clients."""</span>
+    <span class="kw">return</span> [
+        mcp_types.<span class="cl">Tool</span>(
+            name=<span class="st">"add_numbers"</span>,
+            description=<span class="st">"Adds two numbers and returns the result."</span>,
+            inputSchema={
+                <span class="st">"type"</span>: <span class="st">"object"</span>,
+                <span class="st">"properties"</span>: {
+                    <span class="st">"a"</span>: {<span class="st">"type"</span>: <span class="st">"number"</span>, <span class="st">"description"</span>: <span class="st">"First number"</span>},
+                    <span class="st">"b"</span>: {<span class="st">"type"</span>: <span class="st">"number"</span>, <span class="st">"description"</span>: <span class="st">"Second number"</span>},
+                },
+                <span class="st">"required"</span>: [<span class="st">"a"</span>, <span class="st">"b"</span>],
+            },
+        ),
+        mcp_types.<span class="cl">Tool</span>(
+            name=<span class="st">"get_timestamp"</span>,
+            description=<span class="st">"Returns the current UTC timestamp in ISO format."</span>,
+            inputSchema={<span class="st">"type"</span>: <span class="st">"object"</span>, <span class="st">"properties"</span>: {}, <span class="st">"required"</span>: []},
+        ),
+    ]
+
+<span class="an">@app.call_tool()</span>
+<span class="kw">async def</span> <span class="fn">call_tool</span>(name: <span class="cl">str</span>, arguments: dict) -> list[mcp_types.<span class="cl">Content</span>]:
+    <span class="dc">"""Handle tool calls from MCP clients (e.g., ADK agents)."""</span>
+    <span class="kw">if</span> name == <span class="st">"add_numbers"</span>:
+        result = arguments[<span class="st">"a"</span>] + arguments[<span class="st">"b"</span>]
+        <span class="kw">return</span> [mcp_types.<span class="cl">TextContent</span>(type=<span class="st">"text"</span>, text=json.<span class="fn">dumps</span>({<span class="st">"result"</span>: result}))]
+    <span class="kw">elif</span> name == <span class="st">"get_timestamp"</span>:
+        ts = datetime.<span class="fn">now</span>(timezone.utc).<span class="fn">isoformat</span>()
+        <span class="kw">return</span> [mcp_types.<span class="cl">TextContent</span>(type=<span class="st">"text"</span>, text=json.<span class="fn">dumps</span>({<span class="st">"timestamp"</span>: ts}))]
+    <span class="kw">return</span> [mcp_types.<span class="cl">TextContent</span>(type=<span class="st">"text"</span>, text=json.<span class="fn">dumps</span>({<span class="st">"error"</span>: <span class="st">f"Unknown tool: {name}"</span>}))]
+
+<span class="kw">async def</span> <span class="fn">main</span>():
+    <span class="kw">async with</span> mcp.server.stdio.<span class="fn">stdio_server</span>() <span class="kw">as</span> (read_stream, write_stream):
+        <span class="kw">await</span> app.<span class="fn">run</span>(
+            read_stream, write_stream,
+            <span class="cl">InitializationOptions</span>(
+                server_name=app.name, server_version=<span class="st">"1.0.0"</span>,
+                capabilities=app.<span class="fn">get_capabilities</span>(
+                    notification_options=<span class="cl">NotificationOptions</span>(),
+                    experimental_capabilities={},
+                ),
+            ),
+        )
+
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    asyncio.<span class="fn">run</span>(<span class="fn">main</span>())</code></pre>
+      </div>
+
+      <h3>Consume Your Custom Server in an ADK Agent</h3>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">module_11_use_custom_mcp.py</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code>agent = <span class="cl">LlmAgent</span>(
+    name=<span class="st">"custom_mcp_agent"</span>,
+    model=<span class="cl">LiteLlm</span>(model=<span class="st">"openai/gpt-4o-mini"</span>),
+    instruction=<span class="st">"Use add_numbers for math and get_timestamp for current time."</span>,
+    tools=[
+        <span class="cl">McpToolset</span>(
+            connection_params=<span class="cl">StdioConnectionParams</span>(
+                server_params=<span class="cl">StdioServerParameters</span>(
+                    command=<span class="st">"python3"</span>,
+                    args=[<span class="st">"/absolute/path/to/my_mcp_server.py"</span>],
+                ),
+            ),
+        )
+    ],
+)
+<span class="cm"># ADK spawns my_mcp_server.py as a subprocess automatically.
+# When the runner finishes, the subprocess is cleaned up.</span></code></pre>
+      </div>
+
+      <div class="callout info">
+        <div class="callout-icon">💡</div>
+        <div class="callout-body">
+          <strong>Why build your own MCP server?</strong>
+          Wrap any internal API or database as an MCP server and reuse it across frameworks — ADK agents, Claude Desktop, LangChain, and any future MCP-compatible client. Tool versioning, deployment, and access control are handled at the server level, independently of agent code.
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════ MODULE 12 ══ -->
+    <div id="session-memory" class="module">
+      <div class="module-header">
+        <span class="module-num">MODULE 12</span>
+        <div>
+          <h2>Session Management — In-Memory</h2>
+          <div class="module-meta">InMemorySessionService · session.state · multi-turn · ephemeral</div>
+        </div>
+      </div>
+
+      <p><span class="ic">InMemorySessionService</span> stores all sessions in RAM. Sessions are lost on process restart. Use it for development, testing, and stateless microservices. The API is identical to <span class="ic">DatabaseSessionService</span> — swapping them is a one-line change.</p>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">module_12_in_memory_session.py</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">from</span> google.adk.sessions <span class="kw">import</span> <span class="cl">InMemorySessionService</span>
+
+session_service = <span class="cl">InMemorySessionService</span>()
+
+<span class="cm"># Create session with initial state</span>
+session = <span class="kw">await</span> session_service.<span class="fn">create_session</span>(
+    app_name=<span class="st">"memory_app"</span>,
+    user_id=<span class="st">"student_001"</span>,
+    state={<span class="st">"session_type"</span>: <span class="st">"in_memory"</span>, <span class="st">"turn_count"</span>: <span class="nm">0</span>},
+)
+
+<span class="cm"># Multi-turn: same session_id preserves conversation history</span>
+<span class="kw">for</span> turn <span class="kw">in</span> [
+    <span class="st">"My name is Alex and I live in Calgary."</span>,
+    <span class="st">"What city do I live in?"</span>,   <span class="cm"># agent remembers Calgary</span>
+    <span class="st">"What is my name?"</span>,           <span class="cm"># agent remembers Alex</span>
+]:
+    session.state[<span class="st">"turn_count"</span>] += <span class="nm">1</span>
+    msg = types.<span class="cl">Content</span>(role=<span class="st">"user"</span>, parts=[types.<span class="cl">Part</span>(text=turn)])
+    <span class="kw">async for</span> event <span class="kw">in</span> runner.<span class="fn">run_async</span>(
+        session_id=session.id,    <span class="cm"># ← same session = shared history</span>
+        user_id=session.user_id,
+        new_message=msg,
+    ):
+        <span class="kw">if</span> event.content <span class="kw">and</span> event.content.parts:
+            <span class="kw">for</span> part <span class="kw">in</span> event.content.parts:
+                <span class="kw">if</span> <span class="fn">hasattr</span>(part, <span class="st">"text"</span>) <span class="kw">and</span> part.text:
+                    <span class="fn">print</span>(part.text, end=<span class="st">""</span>)
+
+<span class="cm"># Retrieve session to inspect state</span>
+refreshed = <span class="kw">await</span> session_service.<span class="fn">get_session</span>(
+    app_name=<span class="st">"memory_app"</span>, user_id=<span class="st">"student_001"</span>, session_id=session.id
+)
+<span class="fn">print</span>(refreshed.state)  <span class="cm"># {"turn_count": 3, "last_city_info": "...", ...}</span></code></pre>
+      </div>
+
+      <table class="data-table">
+        <thead><tr><th>Operation</th><th>Method</th></tr></thead>
+        <tbody>
+          <tr><td>Create session</td><td><span class="ic">await service.create_session(app_name, user_id, state={}, session_id=None)</span></td></tr>
+          <tr><td>Get session</td><td><span class="ic">await service.get_session(app_name, user_id, session_id)</span></td></tr>
+          <tr><td>List sessions</td><td><span class="ic">await service.list_sessions(app_name, user_id)</span></td></tr>
+          <tr><td>Delete session</td><td><span class="ic">await service.delete_session(app_name, user_id, session_id)</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+
+    <!-- ══════════════════════════════ MODULE 13 ══ -->
+    <div id="session-db" class="module">
+      <div class="module-header">
+        <span class="module-num">MODULE 13</span>
+        <div>
+          <h2>Session Management — Database Persistence</h2>
+          <div class="module-meta">DatabaseSessionService · SQLite · PostgreSQL · sessions survive restarts</div>
+        </div>
+      </div>
+
+      <p><span class="ic">DatabaseSessionService</span> persists sessions to a database. Sessions survive process restarts — users resume conversations hours or days later. <strong>The entire API is identical to InMemorySessionService</strong>: just swap the service class. This is the power of ADK's abstraction.</p>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">module_13_db_session.py</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">from</span> google.adk.sessions <span class="kw">import</span> <span class="cl">DatabaseSessionService</span>
+
+<span class="cm"># ── SQLite (local file) ──────────────────────────────────────────</span>
+session_service = <span class="cl">DatabaseSessionService</span>(<span class="st">"sqlite:///./sessions.db"</span>)
+
+<span class="cm"># ── PostgreSQL (production) ──────────────────────────────────────</span>
+session_service = <span class="cl">DatabaseSessionService</span>(
+    <span class="st">"postgresql://user:password@localhost:5432/agents_db"</span>
+)
+
+<span class="cm"># ── Everything else is IDENTICAL to InMemorySessionService ───────</span>
+
+<span class="cm"># Use a fixed session_id to simulate a returning user</span>
+FIXED_SESSION_ID = <span class="st">"user-jordan-persistent-001"</span>
+
+existing = <span class="kw">await</span> session_service.<span class="fn">get_session</span>(
+    app_name=<span class="st">"persistent_app"</span>,
+    user_id=<span class="st">"returning_user"</span>,
+    session_id=FIXED_SESSION_ID,
+)
+
+<span class="kw">if</span> existing:
+    session = existing
+    <span class="fn">print</span>(<span class="st">f"✓ Resumed existing session. Visit #{session.state.get('visit_count', 0)}"</span>)
+<span class="kw">else</span>:
+    session = <span class="kw">await</span> session_service.<span class="fn">create_session</span>(
+        app_name=<span class="st">"persistent_app"</span>,
+        user_id=<span class="st">"returning_user"</span>,
+        state={<span class="st">"visit_count"</span>: <span class="nm">0</span>, <span class="st">"created_at"</span>: str(datetime.utcnow())},
+        session_id=FIXED_SESSION_ID,   <span class="cm"># supply your own stable ID</span>
+    )
+    <span class="fn">print</span>(<span class="st">"✓ New session created"</span>)
+
+<span class="cm"># Update state — persists to DB automatically</span>
+session.state[<span class="st">"visit_count"</span>] = session.state.<span class="fn">get</span>(<span class="st">"visit_count"</span>, <span class="nm">0</span>) + <span class="nm">1</span>
+
+runner = <span class="cl">Runner</span>(
+    app_name=<span class="st">"persistent_app"</span>,
+    agent=<span class="cl">LlmAgent</span>(
+        name=<span class="st">"persistent_agent"</span>,
+        model=<span class="cl">LiteLlm</span>(model=<span class="st">"openai/gpt-4o-mini"</span>),
+        instruction=<span class="st">"You have persistent memory. Greet returning users warmly."</span>,
+        output_key=<span class="st">"last_response"</span>,  <span class="cm"># saved to DB on each turn</span>
+    ),
+    session_service=session_service,  <span class="cm"># ← DB-backed, not in-memory</span>
+)
+
+msg = types.<span class="cl">Content</span>(
+    role=<span class="st">"user"</span>,
+    parts=[types.<span class="cl">Part</span>(text=<span class="st">f"Hello! Visit #{session.state['visit_count']}. I'm Jordan."</span>)]
+)
+
+<span class="kw">async for</span> event <span class="kw">in</span> runner.<span class="fn">run_async</span>(session_id=session.id, user_id=session.user_id, new_message=msg):
+    <span class="kw">if</span> event.content <span class="kw">and</span> event.content.parts:
+        <span class="kw">for</span> part <span class="kw">in</span> event.content.parts:
+            <span class="kw">if</span> <span class="fn">hasattr</span>(part, <span class="st">"text"</span>) <span class="kw">and</span> part.text:
+                <span class="fn">print</span>(part.text, end=<span class="st">""</span>)
+
+<span class="fn">print</span>(<span class="st">"\n✓ Run script again — session resumes from sessions.db"</span>)</code></pre>
+      </div>
+
+      <div class="compare-grid">
+        <div class="compare-card">
+          <h4>InMemorySessionService</h4>
+          <ul>
+            <li>No dependencies — built-in</li>
+            <li>Fast — zero I/O</li>
+            <li>Lost on process restart</li>
+            <li>Best for: dev, testing, stateless tasks</li>
+          </ul>
+        </div>
+        <div class="compare-card">
+          <h4>DatabaseSessionService</h4>
+          <ul>
+            <li>Needs: pip install aiosqlite (SQLite) or asyncpg (Postgres)</li>
+            <li>Survives restarts and deploys</li>
+            <li>Multi-instance safe (production)</li>
+            <li>Best for: chatbots, long-running assistants</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout tip">
+        <div class="callout-icon">✅</div>
+        <div class="callout-body">
+          <strong>One-line swap from dev to production</strong>
+          Change <span class="ic">InMemorySessionService()</span> to <span class="ic">DatabaseSessionService("postgresql://...")</span> and your entire agent stack gains persistence — no other code changes needed. This is why ADK uses a service abstraction instead of hardcoding storage.
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ─── LiteLLM Reference ─── -->
+    <div class="divider">
+      <div class="divider-line"></div>
+      <div class="divider-text">LiteLLM Reference</div>
+      <div class="divider-line"></div>
+    </div>
+
+    <div id="litellm-ref" class="module">
+      <div class="module-header">
+        <span class="module-num">REFERENCE</span>
+        <div>
+          <h2>LiteLLM Gateway — Complete Reference</h2>
+          <div class="module-meta">provider strings · proxy mode · advanced config · model switching</div>
+        </div>
+      </div>
+
+      <p>The <span class="ic">LiteLlm</span> class is ADK's official bridge to the LiteLLM library. It translates ADK's internal model calls into LiteLLM's unified API, which then routes to any provider. You can use it in two modes: <strong>direct</strong> (LiteLLM calls the provider API) or <strong>proxy</strong> (LiteLLM runs as an HTTP server you point at).</p>
+
+      <h3>Direct Mode — Provider API Keys in .env</h3>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">Direct LiteLLM usage — all providers</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">from</span> google.adk.models.lite_llm <span class="kw">import</span> <span class="cl">LiteLlm</span>
+
+<span class="cm"># OpenAI — needs OPENAI_API_KEY in .env</span>
+model = <span class="cl">LiteLlm</span>(model=<span class="st">"openai/gpt-4o-mini"</span>)
+model = <span class="cl">LiteLlm</span>(model=<span class="st">"openai/gpt-4o"</span>)
+model = <span class="cl">LiteLlm</span>(model=<span class="st">"openai/o1-mini"</span>)
+
+<span class="cm"># Anthropic — needs ANTHROPIC_API_KEY in .env</span>
+model = <span class="cl">LiteLlm</span>(model=<span class="st">"anthropic/claude-3-haiku-20240307"</span>)
+model = <span class="cl">LiteLlm</span>(model=<span class="st">"anthropic/claude-3-5-sonnet-20241022"</span>)
+
+<span class="cm"># Google Gemini — needs GEMINI_API_KEY in .env</span>
+model = <span class="cl">LiteLlm</span>(model=<span class="st">"gemini/gemini-1.5-flash"</span>)
+model = <span class="cl">LiteLlm</span>(model=<span class="st">"gemini/gemini-1.5-pro"</span>)
+
+<span class="cm"># Local Ollama — no API key, needs Ollama running locally</span>
+model = <span class="cl">LiteLlm</span>(model=<span class="st">"ollama/llama3.2"</span>)
+model = <span class="cl">LiteLlm</span>(model=<span class="st">"ollama/mistral"</span>)
+
+<span class="cm"># Azure OpenAI — needs AZURE_API_KEY + AZURE_API_BASE + AZURE_API_VERSION</span>
+model = <span class="cl">LiteLlm</span>(model=<span class="st">"azure/your-deployment-name"</span>)</code></pre>
+      </div>
+
+      <h3>Proxy Mode — Run LiteLLM as an HTTP Server</h3>
+      <p>For production, run LiteLLM as a proxy. It becomes a central routing layer — one config change swaps any model for all agents, adds retries, load balancing, and cost tracking.</p>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">litellm_config.yaml — proxy configuration</div>
+          <span class="code-lang">YAML</span>
+        </div>
+        <pre><code>model_list:
+  - model_name: fast-model
+    litellm_params:
+      model: openai/gpt-4o-mini
+      api_key: os.environ/OPENAI_API_KEY
+
+  - model_name: smart-model
+    litellm_params:
+      model: anthropic/claude-3-5-sonnet-20241022
+      api_key: os.environ/ANTHROPIC_API_KEY
+
+  - model_name: local-model
+    litellm_params:
+      model: ollama/llama3.2
+      api_base: http://localhost:11434
+
+router_settings:
+  routing_strategy: least-busy
+  retry_after: 5</code></pre>
+      </div>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">Using proxy aliases in ADK agents</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="cm"># Start proxy: litellm --config litellm_config.yaml --port 4000</span>
+<span class="cm"># Then point LiteLlm at your proxy with openai/ prefix + api_base</span>
+
+<span class="kw">import</span> litellm
+
+litellm.api_base = <span class="st">"http://127.0.0.1:4000"</span>  <span class="cm"># your proxy</span>
+litellm.api_key  = <span class="st">"no-key"</span>                  <span class="cm"># or master_key if set</span>
+
+model = <span class="cl">LiteLlm</span>(model=<span class="st">"openai/fast-model"</span>)   <span class="cm"># alias from litellm_config.yaml</span>
+model = <span class="cl">LiteLlm</span>(model=<span class="st">"openai/smart-model"</span>)  <span class="cm"># another alias</span>
+<span class="cm"># Zero agent code changes — swap model at proxy config level</span></code></pre>
+      </div>
+
+      <h3>Complete Architecture Map</h3>
+      <table class="data-table">
+        <thead>
+          <tr><th>Module</th><th>Pattern</th><th>Key Class</th><th>Use When</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>01</td><td>Basic Agent</td><td>LlmAgent + InMemorySessionService</td><td>Starting point for any agent</td></tr>
+          <tr><td>02</td><td>Multiple Agents</td><td>Multiple LlmAgent instances</td><td>Separate specialist concerns</td></tr>
+          <tr><td>03</td><td>Agent Team</td><td>LlmAgent + sub_agents</td><td>Smart routing with orchestrator</td></tr>
+          <tr><td>04</td><td>Streaming</td><td>async for event in run_async()</td><td>Real-time user-facing apps</td></tr>
+          <tr><td>05</td><td>LLM Agent Full</td><td>tools= + output_key=</td><td>Tool use + state writing</td></tr>
+          <tr><td>06</td><td>Custom Agent</td><td>BaseAgent + LlmAgent children + route banner</td><td>Rule-based routing, hybrid logic, show which specialist ran</td></tr>
+          <tr><td>07</td><td>Multi-Agent Banking</td><td>SequentialAgent + mock tools + streaming audit + demo_expected_decision + run_banking.sh</td><td>Pipeline + observability + fixed approve/deny teaching outcomes</td></tr>
+          <tr><td>08</td><td>Workflow Agents</td><td>Sequential/Parallel/LoopAgent</td><td>Defined execution patterns</td></tr>
+          <tr><td>09</td><td>Function Tools</td><td>Python functions + ToolContext</td><td>Custom tool logic + state access</td></tr>
+          <tr><td>10</td><td>MCP Client</td><td>McpToolset</td><td>Use external MCP tool servers</td></tr>
+          <tr><td>11</td><td>MCP Server</td><td>mcp.server + list_tools/call_tool</td><td>Expose your own tools via MCP</td></tr>
+          <tr><td>12</td><td>In-Memory Session</td><td>InMemorySessionService</td><td>Dev, testing, stateless tasks</td></tr>
+          <tr><td>13</td><td>DB Session</td><td>DatabaseSessionService</td><td>Production, persistent history</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout tip" style="margin-top:28px">
+        <div class="callout-icon">🎓</div>
+        <div class="callout-body">
+          <strong>Instructor's Golden Rule</strong>
+          Every agent in this course uses <span class="ic">model=LiteLlm(model="openai/gpt-4o-mini")</span> — or any other LiteLLM provider string. Change the string, change the model. Add <span class="ic">litellm.api_base</span> to route through a proxy. Zero other agent code changes needed. This is what "all access through LiteLLM" means in practice.
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════ LAYER 3 BANNER ══ -->
+    <div style="padding: 48px 0 32px;">
+      <div style="background: linear-gradient(135deg, rgba(91,127,255,0.08), rgba(249,202,36,0.06)); border: 1px solid rgba(91,127,255,0.25); border-radius: 16px; padding: 36px 40px;">
+        <div style="font-family: 'Space Mono', monospace; font-size:10px; letter-spacing:0.15em; text-transform:uppercase; color:var(--accent4); margin-bottom:10px;">Layer 3 · Adaptive Intelligence</div>
+        <h2 style="font-size:32px; font-weight:800; letter-spacing:-0.02em; margin-bottom:12px; background: linear-gradient(120deg,#5b7fff,#f9ca24); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">Learning System &amp; Adaptive Intelligence</h2>
+        <p style="color:var(--text-muted); font-size:16px; font-weight:300; font-style:italic; max-width:680px; margin:0;">Agents that remember, evaluate, adapt, and improve. This layer elevates your system from a stateless executor to a self-improving intelligence — closing the loop between action, outcome, and future behavior.</p>
+        <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:20px;">
+          <span class="tag yellow">Feedback Loops</span>
+          <span class="tag yellow">Outcome Tracking</span>
+          <span class="tag green">Long-term Memory</span>
+          <span class="tag green">Adaptive Prompting</span>
+          <span class="tag">LLM-as-Judge</span>
+          <span class="tag">Decision Optimization</span>
+          <span class="tag red">Exploration vs Exploitation</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════ MODULE 14 ══ -->
+    <div id="feedback-loops" class="module">
+      <div class="module-header">
+        <span class="module-num">MODULE 14</span>
+        <div>
+          <h2>Feedback Loops in Agent Systems</h2>
+          <div class="module-meta">observe · score · store · adjust · repeat</div>
+        </div>
+      </div>
+      <p>A feedback loop is the mechanism by which a system <strong>observes the outcome of its own decisions and adjusts future behavior accordingly</strong>. Without feedback loops, agents are open-loop executors — they act, forget, and repeat the same mistakes. With them, they become adaptive systems that compound learning over time.</p>
+      <div class="concept" data-label="Core Concept">
+        <p style="margin:0; color:var(--text-muted); font-size:14px; line-height:1.8;">
+          <strong style="color:var(--text);">The Feedback Cycle</strong><br>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size:13px;">Action → Outcome → Score → Store → Influence Next Action</span><br><br>
+          Each arrow is a system boundary. The weakest link in most agentic systems is the <em>Score → Store</em> step — teams build actions but skip structured outcome recording.
+        </p>
+      </div>
+      <div class="arch-diagram">
+        <strong style="color:var(--text); display:block; margin-bottom:16px;">Feedback Loop Architecture</strong>
+        <div class="arch-row">
+          <div class="arch-box accent">Agent Decision</div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box yellow">Tool / Action</div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box green">Outcome Observed</div>
+        </div>
+        <div class="arch-row">
+          <div class="arch-box accent">Prompt Adjusted ←</div>
+          <div class="arch-arrow">←</div>
+          <div class="arch-box red">Score Computed</div>
+          <div class="arch-arrow">←</div>
+          <div class="arch-box yellow">Stored in DB</div>
+        </div>
+      </div>
+      <div class="compare-grid">
+        <div class="compare-card">
+          <h4>Implicit (inferred)</h4>
+          <ul>
+            <li>User re-asked the same question → agent failed</li>
+            <li>Task completed without follow-up → success</li>
+            <li>User edited agent output → partial success</li>
+            <li>Retry triggered → tool failure</li>
+          </ul>
+        </div>
+        <div class="compare-card">
+          <h4>Explicit (captured)</h4>
+          <ul>
+            <li>User thumbs-up / thumbs-down</li>
+            <li>Supervisor agent scores output (Module 19)</li>
+            <li>Business metric crossed (transfer succeeded)</li>
+            <li>Human-in-the-loop review result</li>
+          </ul>
+        </div>
+      </div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">feedback_loop.py — capturing implicit and explicit signals</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">import</span> uuid, datetime
+<span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass, field, asdict
+<span class="kw">from</span> typing <span class="kw">import</span> Literal
+<span class="kw">import</span> json, sqlite3
+
+<span class="an">@dataclass</span>
+<span class="kw">class</span> <span class="cl">FeedbackRecord</span>:
+    decision_id: str = field(default_factory=<span class="kw">lambda</span>: str(uuid.uuid4()))
+    agent_name: str = <span class="st">""</span>
+    action: str = <span class="st">""</span>
+    outcome: str = <span class="st">""</span>
+    score: float = <span class="nm">0.0</span>        <span class="cm"># -1.0 to 1.0</span>
+    source: <span class="cl">Literal</span>[<span class="st">"implicit"</span>, <span class="st">"explicit"</span>, <span class="st">"judge"</span>] = <span class="st">"implicit"</span>
+    context: dict = field(default_factory=dict)
+    ts: str = field(default_factory=<span class="kw">lambda</span>: datetime.datetime.utcnow().isoformat())
+
+<span class="kw">class</span> <span class="cl">FeedbackStore</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, db_path: str = <span class="st">"feedback.db"</span>):
+        self.conn = sqlite3.connect(db_path, check_same_thread=<span class="kw">False</span>)
+        self.conn.execute(<span class="st">"""
+            CREATE TABLE IF NOT EXISTS feedback (
+                decision_id TEXT PRIMARY KEY,
+                agent_name  TEXT,
+                action      TEXT,
+                outcome     TEXT,
+                score       REAL,
+                source      TEXT,
+                context     TEXT,
+                ts          TEXT
+            )"""</span>)
+        self.conn.commit()
+
+    <span class="kw">def</span> <span class="fn">record</span>(self, fb: <span class="cl">FeedbackRecord</span>) -> <span class="kw">None</span>:
+        d = asdict(fb); d[<span class="st">"context"</span>] = json.dumps(d[<span class="st">"context"</span>])
+        self.conn.execute(<span class="st">"""INSERT OR REPLACE INTO feedback
+            VALUES (:decision_id,:agent_name,:action,:outcome,:score,:source,:context,:ts)"""</span>, d)
+        self.conn.commit()
+
+    <span class="kw">def</span> <span class="fn">avg_score</span>(self, agent_name: str, action: str, window: int = <span class="nm">50</span>) -> float:
+        row = self.conn.execute(<span class="st">"""SELECT AVG(score) FROM (
+              SELECT score FROM feedback WHERE agent_name=? AND action=?
+              ORDER BY ts DESC LIMIT ?)"""</span>, (agent_name, action, window)).fetchone()
+        <span class="kw">return</span> row[<span class="nm">0</span>] <span class="kw">or</span> <span class="nm">0.0</span>
+
+store = <span class="cl">FeedbackStore</span>()
+store.record(<span class="cl">FeedbackRecord</span>(
+    agent_name=<span class="st">"overdraft_agent"</span>, action=<span class="st">"send_sms_alert"</span>,
+    outcome=<span class="st">"user_opened_notification"</span>, score=<span class="nm">0.8</span>, source=<span class="st">"implicit"</span>,
+    context={<span class="st">"balance"</span>: -<span class="nm">42.5</span>, <span class="st">"threshold"</span>: -<span class="nm">50.0</span>}
+))
+avg = store.avg_score(<span class="st">"overdraft_agent"</span>, <span class="st">"send_sms_alert"</span>)
+<span class="fn">print</span>(<span class="st">f"SMS avg score (last 50): {avg:.2f}"</span>)</code></pre>
+      </div>
+      <div class="callout tip">
+        <div class="callout-icon">💡</div>
+        <div class="callout-body">
+          <strong>Banking Use Case</strong>
+          In your Overdraft Prevention system: if an SMS alert was sent but the customer still incurred a fee, score = -0.5. If they topped up before cutoff, score = +1.0. After 100 events, the agent has a scored history to tune timing thresholds — no LLM required for that decision.
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════ MODULE 15 ══ -->
+    <div id="outcome-tracking" class="module">
+      <div class="module-header">
+        <span class="module-num">MODULE 15</span>
+        <div>
+          <h2>Outcome Tracking &amp; Evaluation Layer</h2>
+          <div class="module-meta">ground truth · correctness scoring · eval harness · regression</div>
+        </div>
+      </div>
+      <p>Outcome tracking answers: <strong>was the agent's decision correct, and by how much?</strong> Unlike generic feedback, outcome tracking compares agent decisions against ground truth and stores structured evaluation records that drive both monitoring and improvement.</p>
+      <div class="concept" data-label="Three Evaluation Axes">
+        <table class="data-table" style="margin:0;">
+          <thead><tr><th>Axis</th><th>Question</th><th>Example</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Correctness</strong></td><td>Was the decision factually right?</td><td>Did the risk score predict the actual overdraft?</td></tr>
+            <tr><td><strong>Timeliness</strong></td><td>Was the action taken at the right moment?</td><td>Was the alert sent before the fee window?</td></tr>
+            <tr><td><strong>Efficiency</strong></td><td>Was it the cheapest/fastest path?</td><td>Did we burn 3 tool calls when 1 would do?</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">eval_layer.py — outcome evaluation harness</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass
+<span class="kw">from</span> typing <span class="kw">import</span> Any, Callable
+<span class="kw">import</span> asyncio
+
+<span class="an">@dataclass</span>
+<span class="kw">class</span> <span class="cl">EvalCase</span>:
+    name: str
+    inputs: dict
+    expected: Any
+    tags: list[str] = None
+
+<span class="kw">class</span> <span class="cl">OutcomeEvaluator</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, agent_fn: <span class="cl">Callable</span>, scorer: <span class="cl">Callable</span>):
+        self.agent_fn = agent_fn
+        self.scorer = scorer
+        self.results: list[dict] = []
+
+    <span class="kw">async def</span> <span class="fn">run</span>(self, cases: list[<span class="cl">EvalCase</span>]) -> dict:
+        <span class="kw">for</span> case <span class="kw">in</span> cases:
+            output = <span class="kw">await</span> self.agent_fn(case.inputs)
+            score  = self.scorer(output, case.expected)
+            self.results.append({<span class="st">"name"</span>: case.name, <span class="st">"score"</span>: score,
+                                  <span class="st">"pass"</span>: score >= <span class="nm">0.8</span>})
+        passing = sum(<span class="nm">1</span> <span class="kw">for</span> r <span class="kw">in</span> self.results <span class="kw">if</span> r[<span class="st">"pass"</span>])
+        <span class="kw">return</span> {<span class="st">"total"</span>: len(self.results), <span class="st">"passing"</span>: passing,
+                <span class="st">"pass_rate"</span>: passing / len(self.results) <span class="kw">if</span> self.results <span class="kw">else</span> <span class="nm">0</span>}
+
+EVAL_CASES = [
+    <span class="cl">EvalCase</span>(<span class="st">"high_risk_triggers_alert"</span>,
+             {<span class="st">"balance"</span>: -<span class="nm">45</span>, <span class="st">"limit"</span>: -<span class="nm">50</span>, <span class="st">"pending"</span>: <span class="nm">20</span>}, <span class="st">"send_alert"</span>),
+    <span class="cl">EvalCase</span>(<span class="st">"safe_balance_no_alert"</span>,
+             {<span class="st">"balance"</span>: <span class="nm">200</span>, <span class="st">"limit"</span>: -<span class="nm">50</span>, <span class="st">"pending"</span>: <span class="nm">30</span>}, <span class="st">"no_action"</span>),
+]
+
+<span class="kw">async def</span> <span class="fn">mock_risk_agent</span>(inputs: dict) -> str:
+    <span class="kw">if</span> inputs[<span class="st">"balance"</span>] - inputs[<span class="st">"pending"</span>] &lt; inputs[<span class="st">"limit"</span>]:
+        <span class="kw">return</span> <span class="st">"send_alert"</span>
+    <span class="kw">return</span> <span class="st">"no_action"</span>
+
+<span class="kw">async def</span> <span class="fn">main</span>():
+    ev = <span class="cl">OutcomeEvaluator</span>(mock_risk_agent, <span class="kw">lambda</span> o,e: <span class="nm">1.0</span> <span class="kw">if</span> o==e <span class="kw">else</span> <span class="nm">0.0</span>)
+    r = <span class="kw">await</span> ev.run(<span class="cl">EVAL_CASES</span>)
+    <span class="fn">print</span>(<span class="st">f"Pass rate: {r['pass_rate']:.0%} ({r['passing']}/{r['total']})"</span>)
+
+asyncio.run(main())</code></pre>
+      </div>
+      <div class="callout warn">
+        <div class="callout-icon">⚠️</div>
+        <div class="callout-body">
+          <strong>Regression Trap</strong>
+          When you tune a prompt or change a model, always re-run your eval suite. Treat it like unit tests: never ship without running it. A change that improves one dimension may silently degrade another.
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════ MODULE 16 ══ -->
+    <div id="persistent-memory" class="module">
+      <div class="module-header">
+        <span class="module-num">MODULE 16</span>
+        <div>
+          <h2>Persistent Behavioral Memory</h2>
+          <div class="module-meta">user intelligence · long-term memory · semantic search · pgvector</div>
+        </div>
+      </div>
+      <p>Session memory (Modules 12–13) keeps state within a conversation. <strong>Persistent behavioral memory keeps state across all time</strong> — building a model of each user's preferences, habits, and patterns that outlives any single session.</p>
+      <div class="compare-grid">
+        <div class="compare-card">
+          <h4>Session Memory (M12–13)</h4>
+          <ul>
+            <li>Lives for one conversation</li>
+            <li>Key-value state dict</li>
+            <li>Lost when session ends</li>
+            <li>Good for: turn-by-turn context</li>
+          </ul>
+        </div>
+        <div class="compare-card">
+          <h4>Behavioral Memory (This Module)</h4>
+          <ul>
+            <li>Persists across all sessions</li>
+            <li>Vector + structured store</li>
+            <li>Grows richer over time</li>
+            <li>Good for: personalization at scale</li>
+          </ul>
+        </div>
+      </div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">behavioral_memory.py — pgvector long-term memory store</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">import</span> asyncpg, json, litellm
+
+<span class="kw">class</span> <span class="cl">BehavioralMemory</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, pool: asyncpg.Pool):
+        self.pool = pool
+
+    <span class="kw">async def</span> <span class="fn">setup</span>(self):
+        <span class="kw">async with</span> self.pool.acquire() <span class="kw">as</span> conn:
+            <span class="kw">await</span> conn.execute(<span class="st">"CREATE EXTENSION IF NOT EXISTS vector"</span>)
+            <span class="kw">await</span> conn.execute(<span class="st">"""
+                CREATE TABLE IF NOT EXISTS user_memory (
+                    id         BIGSERIAL PRIMARY KEY,
+                    user_id    TEXT NOT NULL,
+                    category   TEXT NOT NULL,
+                    content    TEXT NOT NULL,
+                    metadata   JSONB DEFAULT &apos;{}&apos;,
+                    embedding  vector(1536),
+                    created_at TIMESTAMPTZ DEFAULT NOW()
+                )"""</span>)
+
+    <span class="kw">async def</span> <span class="fn">_embed</span>(self, text: str) -> list[float]:
+        resp = litellm.embedding(model=<span class="st">"text-embedding-3-small"</span>, input=[text])
+        <span class="kw">return</span> resp.data[<span class="nm">0</span>].embedding
+
+    <span class="kw">async def</span> <span class="fn">remember</span>(self, user_id: str, category: str,
+                         content: str, metadata: dict = <span class="kw">None</span>) -> <span class="kw">None</span>:
+        vec = <span class="kw">await</span> self._embed(content)
+        <span class="kw">async with</span> self.pool.acquire() <span class="kw">as</span> conn:
+            <span class="kw">await</span> conn.execute(<span class="st">"""
+                INSERT INTO user_memory (user_id, category, content, metadata, embedding)
+                VALUES ($1, $2, $3, $4, $5)"""</span>,
+                user_id, category, content, json.dumps(metadata <span class="kw">or</span> {}), vec)
+
+    <span class="kw">async def</span> <span class="fn">recall</span>(self, user_id: str, query: str, top_k: int = <span class="nm">5</span>) -> list[dict]:
+        vec = <span class="kw">await</span> self._embed(query)
+        <span class="kw">async with</span> self.pool.acquire() <span class="kw">as</span> conn:
+            rows = <span class="kw">await</span> conn.fetch(<span class="st">"""
+                SELECT category, content, metadata,
+                       1 - (embedding &lt;=&gt; $1::vector) AS similarity
+                FROM user_memory WHERE user_id = $2
+                ORDER BY embedding &lt;=&gt; $1::vector LIMIT $3"""</span>,
+                vec, user_id, top_k)
+        <span class="kw">return</span> [dict(r) <span class="kw">for</span> r <span class="kw">in</span> rows]</code></pre>
+      </div>
+      <div class="callout info">
+        <div class="callout-icon">🧠</div>
+        <div class="callout-body">
+          <strong>What to store as behavioral memory</strong>
+          Preferences (<em>"user prefers SMS over push"</em>), patterns (<em>"withdraws $200 every Friday"</em>), facts (<em>"payday is the 15th"</em>), corrections (<em>"user rejected suggested transfer — too large"</em>). Never store raw PII in the content field — store behavioral signals only.
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════ MODULE 17 ══ -->
+    <div id="mcp-intelligence" class="module">
+      <div class="module-header">
+        <span class="module-num">MODULE 17</span>
+        <div>
+          <h2>MCP for Intelligence (Not Just Data)</h2>
+          <div class="module-meta">smart tools · enriched responses · intelligence provider pattern</div>
+        </div>
+      </div>
+      <p>In Modules 10–11 you used MCP tools as <strong>data fetchers</strong>. This module upgrades them to <strong>intelligence providers</strong> — tools that return scored, ranked, or reasoned outputs that directly guide agent decisions without requiring the LLM to re-derive them from raw data.</p>
+      <div class="concept" data-label="Pattern Shift">
+        <table class="data-table" style="margin:0;">
+          <thead><tr><th>Data Fetcher (Before)</th><th>Intelligence Provider (Now)</th></tr></thead>
+          <tbody>
+            <tr><td>Returns raw account balance</td><td>Returns risk score + recommended action</td></tr>
+            <tr><td>Returns transaction list</td><td>Returns anomaly flags + pattern summary</td></tr>
+            <tr><td>LLM reasons over raw data</td><td>LLM acts on pre-computed intelligence</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">mcp_intelligence_server.py — intelligence-returning MCP tools</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">from</span> mcp.server <span class="kw">import</span> Server
+<span class="kw">from</span> mcp.types <span class="kw">import</span> Tool, TextContent
+<span class="kw">import</span> json, mcp.server.stdio <span class="kw">as</span> stdio
+
+app = <span class="cl">Server</span>(<span class="st">"intelligence-provider"</span>)
+
+<span class="an">@app.list_tools()</span>
+<span class="kw">async def</span> <span class="fn">list_tools</span>():
+    <span class="kw">return</span> [<span class="cl">Tool</span>(
+        name=<span class="st">"get_overdraft_intelligence"</span>,
+        description=<span class="st">"Returns risk score, recommended action, and rationale. Use instead of raw balance."</span>,
+        inputSchema={<span class="st">"type"</span>: <span class="st">"object"</span>,
+                     <span class="st">"properties"</span>: {<span class="st">"customer_id"</span>: {<span class="st">"type"</span>: <span class="st">"string"</span>}},
+                     <span class="st">"required"</span>: [<span class="st">"customer_id"</span>]})]
+
+<span class="an">@app.call_tool()</span>
+<span class="kw">async def</span> <span class="fn">call_tool</span>(name: str, arguments: dict):
+    <span class="kw">if</span> name == <span class="st">"get_overdraft_intelligence"</span>:
+        <span class="cm"># In production: call your deterministic risk package here</span>
+        intelligence = {
+            <span class="st">"customer_id"</span>: arguments[<span class="st">"customer_id"</span>],
+            <span class="st">"risk_score"</span>: <span class="nm">0.87</span>,
+            <span class="st">"recommended_action"</span>: <span class="st">"send_alert"</span>,
+            <span class="st">"rationale"</span>: <span class="st">"Balance $-43 with $25 pending; crosses $-50 limit in 2h"</span>,
+            <span class="st">"urgency"</span>: <span class="st">"high"</span>,
+            <span class="st">"confidence"</span>: <span class="nm">0.94</span>,
+        }
+        <span class="kw">return</span> [<span class="cl">TextContent</span>(type=<span class="st">"text"</span>, text=json.dumps(intelligence))]
+
+<span class="kw">async def</span> <span class="fn">main</span>():
+    <span class="kw">async with</span> stdio.stdio_server() <span class="kw">as</span> (r, w):
+        <span class="kw">await</span> app.run(r, w, app.create_initialization_options())
+
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    <span class="kw">import</span> asyncio; asyncio.run(main())</code></pre>
+      </div>
+      <div class="callout tip">
+        <div class="callout-icon">🏦</div>
+        <div class="callout-body">
+          <strong>Why this matters in banking</strong>
+          When the LLM receives <span class="ic">risk_score: 0.87, recommended_action: "send_alert"</span>, it acts as a <em>communication layer</em>, not a <em>computation layer</em>. The critical CLAUDE.md invariant is preserved: <strong>the LLM never touches financial calculations</strong>.
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════ MODULE 18 ══ -->
+    <div id="adaptive-prompting" class="module">
+      <div class="module-header">
+        <span class="module-num">MODULE 18</span>
+        <div>
+          <h2>Adaptive Prompting (Dynamic Context Injection)</h2>
+          <div class="module-meta">per-user system prompts · context builders · personalization pipeline</div>
+        </div>
+      </div>
+      <p>Static system prompts treat every user identically. <strong>Adaptive prompting dynamically constructs the system prompt at runtime</strong> — injecting the right context for the right user at the right moment. The agent literally "thinks differently" per user without any code changes.</p>
+      <div class="arch-diagram">
+        <strong style="color:var(--text); display:block; margin-bottom:16px;">Adaptive Prompt Pipeline</strong>
+        <div class="arch-row">
+          <div class="arch-box green">User ID + Event</div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box yellow">Context Builder</div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box accent">Dynamic System Prompt</div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box red">LiteLlm Agent</div>
+        </div>
+        <div style="font-size:11px; color:var(--text-dim); margin-top:12px;">
+          Context Builder pulls from: Behavioral Memory (M16) · MCP Intelligence (M17) · Feedback History (M14)
+        </div>
+      </div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">adaptive_prompting.py — dynamic context injection for ADK agents</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">from</span> google.adk.agents <span class="kw">import</span> LlmAgent
+<span class="kw">from</span> google.adk.models.lite_llm <span class="kw">import</span> LiteLlm
+
+MODEL = <span class="st">"anthropic/claude-sonnet-4-5"</span>
+
+<span class="kw">class</span> <span class="cl">ContextBuilder</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, memory_store, feedback_store):
+        self.memory = memory_store
+        self.feedback = feedback_store
+
+    <span class="kw">async def</span> <span class="fn">build</span>(self, user_id: str, event_type: str) -> str:
+        memories = <span class="kw">await</span> self.memory.recall(user_id, event_type, top_k=<span class="nm">3</span>)
+        memory_block = <span class="st">"
+"</span>.join(
+            <span class="st">f"- [{m['category']}] {m['content']}"</span> <span class="kw">for</span> m <span class="kw">in</span> memories
+        ) <span class="kw">if</span> memories <span class="kw">else</span> <span class="st">"No prior context."</span>
+
+        alert_score = self.feedback.avg_score(<span class="st">"overdraft_agent"</span>, <span class="st">"send_sms_alert"</span>)
+        xfer_score  = self.feedback.avg_score(<span class="st">"overdraft_agent"</span>, <span class="st">"auto_transfer"</span>)
+
+        <span class="kw">return</span> <span class="st">f"""You are an overdraft prevention agent for customer {user_id}.
+
+BEHAVIORAL CONTEXT (long-term memory):
+{memory_block}
+
+ACTION EFFECTIVENESS (recent 50 decisions):
+- SMS alerts: {alert_score:.0%} positive outcome rate
+- Auto-transfers: {xfer_score:.0%} positive outcome rate
+
+DECISION GUIDANCE: {"Prefer auto-transfer — SMS has been less effective." if alert_score &lt; xfer_score else "Prefer SMS — it has historically worked well for this user."}
+
+Always confirm reasoning before acting. Never modify balances directly."""</span>
+
+<span class="kw">async def</span> <span class="fn">run_adaptive_agent</span>(user_id: str, event: dict, builder: <span class="cl">ContextBuilder</span>):
+    system_prompt = <span class="kw">await</span> builder.build(user_id, event[<span class="st">"type"</span>])
+    agent = <span class="cl">LlmAgent</span>(
+        name=<span class="st">"adaptive_overdraft_agent"</span>,
+        model=<span class="cl">LiteLlm</span>(model=<span class="cl">MODEL</span>),
+        instruction=system_prompt,  <span class="cm"># ← injected per-user per-event</span>
+    )
+    <span class="cm"># ... run as in earlier modules</span></code></pre>
+      </div>
+      <div class="callout info">
+        <div class="callout-icon">🔄</div>
+        <div class="callout-body">
+          <strong>Key Design Principle</strong>
+          The <span class="ic">LlmAgent</span> is stateless — recreated per invocation with a freshly built instruction. The intelligence lives in the ContextBuilder, not the agent. This keeps agent code clean while allowing arbitrarily sophisticated personalization logic.
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════ MODULE 19 ══ -->
+    <div id="llm-judge" class="module">
+      <div class="module-header">
+        <span class="module-num">MODULE 19</span>
+        <div>
+          <h2>LLM as Judge vs Guardrails</h2>
+          <div class="module-meta">evaluation · scoring · rule-based guards · two-layer safety</div>
+        </div>
+      </div>
+      <p>When an agent produces output, something needs to evaluate it. <strong>Guardrails are deterministic rule checks. LLM-as-Judge is probabilistic semantic evaluation.</strong> You need both — they catch different failure modes.</p>
+      <div class="compare-grid">
+        <div class="compare-card">
+          <h4>Guardrails (deterministic)</h4>
+          <ul>
+            <li>Amount within allowed range?</li>
+            <li>Output contains required fields?</li>
+            <li>PII detected in response?</li>
+            <li>Action within user permissions?</li>
+            <li>Fast (microseconds), 100% consistent</li>
+          </ul>
+        </div>
+        <div class="compare-card">
+          <h4>LLM-as-Judge (semantic)</h4>
+          <ul>
+            <li>Is the tone appropriate?</li>
+            <li>Does the explanation make sense?</li>
+            <li>Is the recommendation genuinely helpful?</li>
+            <li>Could this be misinterpreted?</li>
+            <li>Slower (100–500ms), probabilistic</li>
+          </ul>
+        </div>
+      </div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">evaluation_pipeline.py — guardrails + LLM judge in sequence</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">import</span> litellm, re, json
+
+MODEL = <span class="st">"anthropic/claude-sonnet-4-5"</span>
+
+<span class="kw">class</span> <span class="cl">Guardrails</span>:
+    MAX_TRANSFER = <span class="nm">1000.0</span>
+    REQUIRED_KEYS = {<span class="st">"action"</span>, <span class="st">"amount"</span>, <span class="st">"rationale"</span>}
+    PII_PATTERN = re.compile(<span class="st">r"\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}"</span>)
+
+    <span class="kw">def</span> <span class="fn">check</span>(self, output: dict) -> tuple[bool, str]:
+        missing = self.<span class="cl">REQUIRED_KEYS</span> - output.keys()
+        <span class="kw">if</span> missing: <span class="kw">return</span> <span class="kw">False</span>, <span class="st">f"Missing keys: {missing}"</span>
+        <span class="kw">if</span> output.get(<span class="st">"amount"</span>, <span class="nm">0</span>) > self.<span class="cl">MAX_TRANSFER</span>:
+            <span class="kw">return</span> <span class="kw">False</span>, <span class="st">f"Amount exceeds max {self.MAX_TRANSFER}"</span>
+        <span class="kw">if</span> self.<span class="cl">PII_PATTERN</span>.search(json.dumps(output)):
+            <span class="kw">return</span> <span class="kw">False</span>, <span class="st">"PII detected in output"</span>
+        <span class="kw">return</span> <span class="kw">True</span>, <span class="st">"ok"</span>
+
+<span class="kw">async def</span> <span class="fn">llm_judge</span>(agent_output: dict, context: dict) -> dict:
+    prompt = <span class="st">f"""Evaluate this banking agent output.
+CONTEXT: {json.dumps(context)}
+OUTPUT:  {json.dumps(agent_output)}
+Score helpfulness, clarity, safety (each 0.0-1.0).
+Respond ONLY with JSON: {{"helpfulness":0.0,"clarity":0.0,"safety":0.0,"overall":0.0,"flag":null}}
+Set "flag" to explanation if any score &lt; 0.7."""</span>
+    resp = litellm.completion(model=<span class="cl">MODEL</span>,
+        messages=[{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: prompt}],
+        response_format={<span class="st">"type"</span>: <span class="st">"json_object"</span>}, temperature=<span class="nm">0</span>)
+    <span class="kw">return</span> json.loads(resp.choices[<span class="nm">0</span>].message.content)
+
+<span class="kw">async def</span> <span class="fn">evaluate_output</span>(output: dict, context: dict) -> dict:
+    passed, reason = <span class="cl">Guardrails</span>().check(output)
+    <span class="kw">if not</span> passed:
+        <span class="kw">return</span> {<span class="st">"approved"</span>: <span class="kw">False</span>, <span class="st">"reason"</span>: reason, <span class="st">"layer"</span>: <span class="st">"guardrail"</span>}
+    scores = <span class="kw">await</span> llm_judge(output, context)
+    <span class="kw">return</span> {<span class="st">"approved"</span>: scores[<span class="st">"overall"</span>] >= <span class="nm">0.75</span> <span class="kw">and not</span> scores[<span class="st">"flag"</span>],
+            <span class="st">"scores"</span>: scores, <span class="st">"layer"</span>: <span class="st">"llm_judge"</span>}</code></pre>
+      </div>
+      <div class="callout danger">
+        <div class="callout-icon">🚨</div>
+        <div class="callout-body">
+          <strong>Never use LLM-as-Judge alone for financial decisions</strong>
+          Always run guardrails first. A judge LLM can hallucinate a passing score. Guardrails must run before any LLM evaluation and their failures must block execution entirely.
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════ MODULE 20 ══ -->
+    <div id="decision-optimization" class="module">
+      <div class="module-header">
+        <span class="module-num">MODULE 20</span>
+        <div>
+          <h2>Decision Optimization Loop</h2>
+          <div class="module-meta">reward signal · parameter tuning · threshold optimization · closed-loop</div>
+        </div>
+      </div>
+      <p>The optimization loop takes feedback scores from Module 14, passes them through an evaluator (Modules 15/19), and uses the aggregate signal to <strong>tune decision parameters automatically over time</strong>. This is where your system starts improving without human intervention.</p>
+      <div class="arch-diagram">
+        <strong style="color:var(--text); display:block; margin-bottom:16px;">Closed-Loop Optimization</strong>
+        <div class="arch-row">
+          <div class="arch-box accent">Config Params<br><span style="font-size:10px">thresholds, weights</span></div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box yellow">Agent Decisions</div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box green">Outcomes + Scores</div>
+        </div>
+        <div class="arch-row">
+          <div class="arch-box accent" style="border-color:var(--accent3); color:var(--accent3);">Updated Params ←</div>
+          <div class="arch-arrow">←</div>
+          <div class="arch-box red">Optimizer</div>
+          <div class="arch-arrow">←</div>
+          <div class="arch-box yellow">Feedback Aggregator</div>
+        </div>
+      </div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">decision_optimizer.py — automated threshold tuning via feedback</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">import</span> json
+<span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass, asdict
+
+<span class="an">@dataclass</span>
+<span class="kw">class</span> <span class="cl">DecisionConfig</span>:
+    risk_threshold: float = <span class="nm">0.75</span>      <span class="cm"># trigger alert above this score</span>
+    alert_lead_time_hours: float = <span class="nm">2.0</span>
+    auto_transfer_max: float = <span class="nm">100.0</span>
+    prefer_sms: bool = <span class="kw">True</span>
+
+<span class="kw">class</span> <span class="cl">DecisionOptimizer</span>:
+    LEARNING_RATE = <span class="nm">0.05</span>
+
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, feedback_store, config_path: str = <span class="st">"config.json"</span>):
+        self.feedback = feedback_store
+        self.config_path = config_path
+        self.config = self.<span class="fn">_load</span>()
+
+    <span class="kw">def</span> <span class="fn">_load</span>(self):
+        <span class="kw">try</span>:
+            <span class="kw">with</span> open(self.config_path) <span class="kw">as</span> f: <span class="kw">return</span> <span class="cl">DecisionConfig</span>(**json.load(f))
+        <span class="kw">except</span> <span class="cl">FileNotFoundError</span>: <span class="kw">return</span> <span class="cl">DecisionConfig</span>()
+
+    <span class="kw">def</span> <span class="fn">optimize</span>(self) -> dict:
+        sms_score  = self.feedback.avg_score(<span class="st">"overdraft_agent"</span>, <span class="st">"send_sms_alert"</span>)
+        xfer_score = self.feedback.avg_score(<span class="st">"overdraft_agent"</span>, <span class="st">"auto_transfer"</span>)
+        alert_score= self.feedback.avg_score(<span class="st">"overdraft_agent"</span>, <span class="st">"send_alert"</span>)
+        changes = {}
+
+        <span class="cm"># Alerts under-performing → raise threshold (be more selective)</span>
+        <span class="kw">if</span> alert_score &lt; <span class="nm">0.5</span>:
+            old = self.config.risk_threshold
+            self.config.risk_threshold = min(<span class="nm">0.95</span>, old + self.<span class="cl">LEARNING_RATE</span>)
+            changes[<span class="st">"risk_threshold"</span>] = (old, self.config.risk_threshold)
+
+        <span class="cm"># Transfers outperform SMS → switch channel preference</span>
+        <span class="kw">if</span> xfer_score > sms_score + <span class="nm">0.15</span>:
+            self.config.prefer_sms = <span class="kw">False</span>
+            changes[<span class="st">"prefer_sms"</span>] = (<span class="kw">True</span>, <span class="kw">False</span>)
+
+        <span class="kw">with</span> open(self.config_path, <span class="st">"w"</span>) <span class="kw">as</span> f:
+            json.dump(asdict(self.config), f, indent=<span class="nm">2</span>)
+        <span class="kw">return</span> {<span class="st">"updated"</span>: bool(changes), <span class="st">"changes"</span>: changes}</code></pre>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════ MODULE 21 ══ -->
+    <div id="explore-exploit" class="module">
+      <div class="module-header">
+        <span class="module-num">MODULE 21</span>
+        <div>
+          <h2>Exploration vs Exploitation</h2>
+          <div class="module-meta">epsilon-greedy · UCB · multi-armed bandit · AI decision theory</div>
+        </div>
+      </div>
+      <p>Every adaptive system faces a fundamental tension: <strong>exploit</strong> the best-known strategy (safe, predictable) or <strong>explore</strong> alternatives to find something better (risky, potentially superior). This is the exploration-exploitation tradeoff — directly applicable to agent decision-making.</p>
+      <div class="concept" data-label="The Tradeoff">
+        <p style="margin:0; color:var(--text-muted); font-size:14px; line-height:1.8;">
+          <strong style="color:var(--text);">Pure Exploitation</strong> — always pick the highest-scoring action → risks local optima.<br><br>
+          <strong style="color:var(--text);">Pure Exploration</strong> — try random actions → thrashes, never learns consistently.<br><br>
+          <strong style="color:var(--accent3);">Epsilon-Greedy</strong> — exploit most of the time (1-ε), explore randomly with probability ε. Simple and effective.
+        </p>
+      </div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">bandit_agent.py — epsilon-greedy and UCB action selection</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">import</span> random, math
+<span class="kw">from</span> typing <span class="kw">import</span> Literal
+
+<span class="cl">ACTIONS</span> = [<span class="st">"send_sms"</span>, <span class="st">"send_push"</span>, <span class="st">"auto_transfer"</span>, <span class="st">"no_action"</span>]
+
+<span class="kw">class</span> <span class="cl">EpsilonGreedySelector</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, feedback_store, epsilon: float = <span class="nm">0.10</span>):
+        self.feedback = feedback_store
+        self.epsilon = epsilon
+
+    <span class="kw">def</span> <span class="fn">select</span>(self, agent_name: str) -> str:
+        <span class="kw">if</span> random.random() &lt; self.epsilon:
+            chosen = random.choice(<span class="cl">ACTIONS</span>)
+            <span class="fn">print</span>(<span class="st">f"[EXPLORE] Trying: {chosen}"</span>)
+            <span class="kw">return</span> chosen
+        scores = {a: self.feedback.avg_score(agent_name, a) <span class="kw">for</span> a <span class="kw">in</span> <span class="cl">ACTIONS</span>}
+        best = max(scores, key=scores.get)
+        <span class="fn">print</span>(<span class="st">f"[EXPLOIT] Best: {best} (score={scores[best]:.2f})"</span>)
+        <span class="kw">return</span> best
+
+<span class="kw">class</span> <span class="cl">UCBSelector</span>:
+    <span class="st">"""UCB1 — explores actions with high uncertainty more often."""</span>
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, feedback_store, c: float = <span class="nm">1.41</span>):
+        self.feedback = feedback_store
+        self.c = c
+
+    <span class="kw">def</span> <span class="fn">_count</span>(self, agent_name: str, action: str) -> int:
+        row = self.feedback.conn.execute(
+            <span class="st">"SELECT COUNT(*) FROM feedback WHERE agent_name=? AND action=?"</span>,
+            (agent_name, action)).fetchone()
+        <span class="kw">return</span> row[<span class="nm">0</span>] <span class="kw">or</span> <span class="nm">1</span>
+
+    <span class="kw">def</span> <span class="fn">select</span>(self, agent_name: str) -> str:
+        total = sum(self.<span class="fn">_count</span>(agent_name, a) <span class="kw">for</span> a <span class="kw">in</span> <span class="cl">ACTIONS</span>)
+        ucb = {a: self.feedback.avg_score(agent_name, a) +
+               self.c * math.sqrt(math.log(total) / self.<span class="fn">_count</span>(agent_name, a))
+               <span class="kw">for</span> a <span class="kw">in</span> <span class="cl">ACTIONS</span>}
+        best = max(ucb, key=ucb.get)
+        <span class="fn">print</span>(<span class="st">f"[UCB] Selected: {best} (ucb={ucb[best]:.3f})"</span>)
+        <span class="kw">return</span> best</code></pre>
+      </div>
+      <div class="callout warn">
+        <div class="callout-icon">⚠️</div>
+        <div class="callout-body">
+          <strong>Exploration in production banking systems</strong>
+          Keep epsilon low (5–10%). Never explore on irreversible financial operations — only on communication channel choice, alert timing, or message phrasing. Gate exploration behind a feature flag.
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════ MODULE 22 ══ -->
+    <div id="memory-architectures" class="module">
+      <div class="module-header">
+        <span class="module-num">MODULE 22</span>
+        <div>
+          <h2>Agent Memory Architectures</h2>
+          <div class="module-meta">in-context · episodic · semantic · procedural · working · external</div>
+        </div>
+      </div>
+      <p>There is no single "agent memory." A production system uses <strong>multiple memory types simultaneously</strong>, each serving a different purpose.</p>
+      <table class="data-table">
+        <thead>
+          <tr><th>Memory Type</th><th>What it stores</th><th>Implementation</th><th>Scope</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>In-Context</strong></td><td>Current conversation turns</td><td>ADK session state dict</td><td>Single session</td></tr>
+          <tr><td><strong>Episodic</strong></td><td>Past events / interaction history</td><td>DatabaseSessionService (M13)</td><td>Per-user, persistent</td></tr>
+          <tr><td><strong>Semantic</strong></td><td>Facts, patterns, behavioral data</td><td>pgvector + embeddings (M16)</td><td>Per-user, long-term</td></tr>
+          <tr><td><strong>Procedural</strong></td><td>How to do things (skills, workflows)</td><td>Agent instructions + tool defs</td><td>System-wide</td></tr>
+          <tr><td><strong>Working</strong></td><td>Current task scratchpad</td><td>ADK <span class="ic">output_key</span> in session state</td><td>Current task only</td></tr>
+          <tr><td><strong>External</strong></td><td>Live data (prices, balances)</td><td>MCP tools (M10/M17)</td><td>Real-time</td></tr>
+        </tbody>
+      </table>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">memory_router.py — unified memory access interface</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass
+<span class="kw">from</span> typing <span class="kw">import</span> Any
+
+<span class="an">@dataclass</span>
+<span class="kw">class</span> <span class="cl">MemoryQuery</span>:
+    user_id: str
+    query: str
+    memory_types: list[str]
+    top_k: int = <span class="nm">5</span>
+
+<span class="kw">class</span> <span class="cl">MemoryRouter</span>:
+    <span class="st">"""Single interface to all memory systems."""</span>
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, session_service, behavioral_memory):
+        self.sessions = session_service
+        self.semantic = behavioral_memory
+
+    <span class="kw">async def</span> <span class="fn">retrieve</span>(self, q: <span class="cl">MemoryQuery</span>) -> dict[str, Any]:
+        results = {}
+        <span class="kw">if</span> <span class="st">"episodic"</span> <span class="kw">in</span> q.memory_types:
+            sessions = <span class="kw">await</span> self.sessions.list_sessions(
+                app_name=<span class="st">"overdraft_app"</span>, user_id=q.user_id)
+            results[<span class="st">"episodic"</span>] = [s.state <span class="kw">for</span> s <span class="kw">in</span> sessions[-<span class="nm">5</span>:]]
+        <span class="kw">if</span> <span class="st">"semantic"</span> <span class="kw">in</span> q.memory_types:
+            results[<span class="st">"semantic"</span>] = <span class="kw">await</span> self.semantic.recall(
+                q.user_id, q.query, top_k=q.top_k)
+        <span class="kw">return</span> results
+
+    <span class="kw">def</span> <span class="fn">format_for_prompt</span>(self, memory_results: dict) -> str:
+        blocks = []
+        <span class="kw">if</span> items := memory_results.get(<span class="st">"semantic"</span>):
+            blocks.append(<span class="st">"BEHAVIORAL MEMORY:
+"</span> +
+                          <span class="st">"
+"</span>.join(<span class="st">f"- {m['content']}"</span> <span class="kw">for</span> m <span class="kw">in</span> items))
+        <span class="kw">if</span> ep := memory_results.get(<span class="st">"episodic"</span>):
+            blocks.append(<span class="st">f"RECENT SESSIONS: {len(ep)} found"</span>)
+        <span class="kw">return</span> <span class="st">"
+
+"</span>.join(blocks) <span class="kw">or</span> <span class="st">"No prior context available."</span></code></pre>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════ MODULE 23 ══ -->
+    <div id="multi-agent-learning" class="module">
+      <div class="module-header">
+        <span class="module-num">MODULE 23</span>
+        <div>
+          <h2>Multi-Agent Learning Systems</h2>
+          <div class="module-meta">shared intelligence · collective feedback · knowledge propagation</div>
+        </div>
+      </div>
+      <p>In a multi-agent system, each agent is an independent actor — but their learning doesn't have to be isolated. <strong>Shared intelligence means one agent's successful decision can benefit all agents</strong> immediately.</p>
+      <div class="arch-diagram">
+        <strong style="color:var(--text); display:block; margin-bottom:16px;">Shared Intelligence Architecture</strong>
+        <div class="arch-row">
+          <div class="arch-box accent">Risk Agent</div>
+          <div class="arch-box accent">Alert Agent</div>
+          <div class="arch-box accent">Transfer Agent</div>
+        </div>
+        <div class="arch-row"><div class="arch-arrow" style="font-size:20px;">↓ ↓ ↓</div></div>
+        <div class="arch-row">
+          <div class="arch-box yellow">Shared Feedback Store</div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box green">Intelligence Hub</div>
+        </div>
+        <div class="arch-row"><div class="arch-arrow" style="font-size:20px;">↑ ↑ ↑</div></div>
+        <div class="arch-row">
+          <div class="arch-box red">New Agents inherit all prior learning</div>
+        </div>
+      </div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">shared_intelligence.py — collective learning across agents</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">from</span> google.adk.agents <span class="kw">import</span> LlmAgent
+<span class="kw">from</span> google.adk.models.lite_llm <span class="kw">import</span> LiteLlm
+
+MODEL = <span class="st">"anthropic/claude-sonnet-4-5"</span>
+
+<span class="kw">class</span> <span class="cl">IntelligenceHub</span>:
+    <span class="st">"""Central knowledge base shared across all agents."""</span>
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, feedback_store):
+        self.feedback = feedback_store
+        self._insights: dict[str, dict] = {}
+
+    <span class="kw">def</span> <span class="fn">publish</span>(self, topic: str, insight: dict, source: str) -> <span class="kw">None</span>:
+        self._insights[topic] = {**insight, <span class="st">"source"</span>: source}
+        <span class="fn">print</span>(<span class="st">f"[HUB] {source} published insight on &apos;{topic}&apos;"</span>)
+
+    <span class="kw">def</span> <span class="fn">get</span>(self, topic: str) -> dict:
+        <span class="kw">return</span> self._insights.get(topic, {})
+
+    <span class="kw">def</span> <span class="fn">best_action</span>(self, action_type: str) -> tuple[str, float]:
+        best_agent, best_score = <span class="kw">None</span>, -<span class="nm">1.0</span>
+        <span class="kw">for</span> agent <span class="kw">in</span> [<span class="st">"risk_agent"</span>, <span class="st">"alert_agent"</span>, <span class="st">"transfer_agent"</span>]:
+            score = self.feedback.avg_score(agent, action_type)
+            <span class="kw">if</span> score > best_score: best_score, best_agent = score, agent
+        <span class="kw">return</span> best_agent, best_score
+
+<span class="kw">async def</span> <span class="fn">build_team</span>(hub: <span class="cl">IntelligenceHub</span>):
+    timing = hub.get(<span class="st">"optimal_alert_timing"</span>)
+    note = (<span class="st">f"System insight: alerts at {timing['best_hour']}h = {timing['lift']:.0%} higher open rate."</span>
+            <span class="kw">if</span> timing <span class="kw">else</span> <span class="st">""</span>)
+    alert_agent = <span class="cl">LlmAgent</span>(name=<span class="st">"alert_agent"</span>, model=<span class="cl">LiteLlm</span>(model=<span class="cl">MODEL</span>),
+                             instruction=<span class="st">f"Send overdraft alerts. {note}"</span>)
+    reminder_agent = <span class="cl">LlmAgent</span>(name=<span class="st">"reminder_agent"</span>, model=<span class="cl">LiteLlm</span>(model=<span class="cl">MODEL</span>),
+                                instruction=<span class="st">f"Send payment reminders. {note}"</span>)
+    <span class="kw">return</span> alert_agent, reminder_agent</code></pre>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════ MODULE 24 ══ -->
+    <div id="production-patterns" class="module">
+      <div class="module-header">
+        <span class="module-num">MODULE 24</span>
+        <div>
+          <h2>Production Patterns for Agent Systems</h2>
+          <div class="module-meta">observability · graceful degradation · circuit breakers · deployment</div>
+        </div>
+      </div>
+      <p>All prior modules build the intelligence. This module ensures it <strong>survives contact with production</strong>. Enterprise-ready agent systems require observability, resilience, deployment hygiene, and always an escape hatch.</p>
+      <div class="concept" data-label="Production Checklist" class="green">
+        <table class="data-table" style="margin:0;">
+          <thead><tr><th>Concern</th><th>Pattern</th><th>Implementation</th></tr></thead>
+          <tbody>
+            <tr><td>LLM timeout</td><td>Circuit breaker</td><td>Fallback to rule-based decision</td></tr>
+            <tr><td>Tool failure</td><td>Retry + dead letter queue</td><td>3 retries, then queue for human review</td></tr>
+            <tr><td>Cost runaway</td><td>Token budget per decision</td><td><span class="ic">max_tokens</span> + LiteLLM cost tracking</td></tr>
+            <tr><td>Silent wrong decisions</td><td>Structured logging</td><td>Every decision logged with inputs + output</td></tr>
+            <tr><td>Model regression</td><td>Shadow mode</td><td>New model runs in parallel, scores compared</td></tr>
+            <tr><td>Regulatory audit</td><td>Immutable decision log</td><td>Append-only table with reason codes</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">production_agent.py — resilient production-grade agent wrapper</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">import</span> asyncio, time, logging, json
+<span class="kw">from</span> google.adk.agents <span class="kw">import</span> LlmAgent
+<span class="kw">from</span> google.adk.models.lite_llm <span class="kw">import</span> LiteLlm
+<span class="kw">from</span> google.adk.runners <span class="kw">import</span> Runner
+<span class="kw">from</span> google.adk.sessions <span class="kw">import</span> InMemorySessionService
+<span class="kw">from</span> google.genai.types <span class="kw">import</span> Content, Part
+
+log = logging.getLogger(<span class="st">"agent.production"</span>)
+MODEL = <span class="st">"anthropic/claude-sonnet-4-5"</span>
+
+<span class="kw">class</span> <span class="cl">CircuitBreaker</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, threshold: int = <span class="nm">5</span>, reset_secs: int = <span class="nm">60</span>):
+        self.failures = <span class="nm">0</span>; self.threshold = threshold
+        self.reset_secs = reset_secs; self.opened_at = <span class="kw">None</span>
+
+    <span class="kw">def</span> <span class="fn">is_open</span>(self) -> bool:
+        <span class="kw">if</span> self.failures >= self.threshold:
+            <span class="kw">if</span> time.time() - self.opened_at > self.reset_secs:
+                self.failures = <span class="nm">0</span>; <span class="kw">return</span> <span class="kw">False</span>
+            <span class="kw">return</span> <span class="kw">True</span>
+        <span class="kw">return</span> <span class="kw">False</span>
+
+    <span class="kw">def</span> <span class="fn">record_failure</span>(self): self.failures += <span class="nm">1</span>; self.opened_at = time.time()
+    <span class="kw">def</span> <span class="fn">record_success</span>(self): self.failures = <span class="nm">0</span>
+
+<span class="kw">class</span> <span class="cl">ProductionAgent</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, agent: <span class="cl">LlmAgent</span>, timeout_secs: float = <span class="nm">10.0</span>):
+        self.agent = agent
+        self.timeout = timeout_secs
+        self.breaker = <span class="cl">CircuitBreaker</span>()
+
+    <span class="kw">async def</span> <span class="fn">decide</span>(self, user_id: str, event: dict, fallback_fn=<span class="kw">None</span>) -> dict:
+        <span class="kw">if</span> self.breaker.is_open():
+            log.warning(<span class="st">"Circuit open — using fallback"</span>)
+            <span class="kw">return</span> fallback_fn(event) <span class="kw">if</span> fallback_fn <span class="kw">else</span> {<span class="st">"action"</span>: <span class="st">"no_action"</span>}
+        <span class="kw">try</span>:
+            svc = <span class="cl">InMemorySessionService</span>()
+            sess = <span class="kw">await</span> svc.create_session(app_name=<span class="st">"prod"</span>, user_id=user_id)
+            runner = <span class="cl">Runner</span>(agent=self.agent, app_name=<span class="st">"prod"</span>, session_service=svc)
+            msg = <span class="cl">Content</span>(role=<span class="st">"user"</span>, parts=[<span class="cl">Part</span>(text=json.dumps(event))])
+            output = <span class="kw">None</span>
+            <span class="kw">async with</span> asyncio.timeout(self.timeout):
+                <span class="kw">async for</span> ev <span class="kw">in</span> runner.run_async(
+                        user_id=user_id, session_id=sess.id, new_message=msg):
+                    <span class="kw">if</span> ev.is_final_response(): output = ev.content.parts[<span class="nm">0</span>].text
+            self.breaker.record_success()
+            <span class="kw">return</span> {<span class="st">"action"</span>: output}
+        <span class="kw">except</span> <span class="cl">Exception</span> <span class="kw">as</span> e:
+            self.breaker.record_failure()
+            log.error(<span class="st">f"Agent failure: {e}"</span>)
+            <span class="kw">return</span> fallback_fn(event) <span class="kw">if</span> fallback_fn <span class="kw">else</span> {<span class="st">"action"</span>: <span class="st">"no_action"</span>}</code></pre>
+      </div>
+      <div class="callout info">
+        <div class="callout-icon">🏭</div>
+        <div class="callout-body">
+          <strong>Deployment Runbook — Layer 3 additions</strong>
+          (1) Start with feedback capture only — no tuning; (2) Run optimizer in dry-run mode for 2 weeks before applying changes; (3) Gate exploration (M21) behind a feature flag; (4) Shadow-mode new models before replacing old ones; (5) Maintain a killswitch that routes all decisions to the deterministic fallback. Your risk function is always callable independently of the agent layer.
+        </div>
+      </div>
+
+      <div class="divider" style="margin-top:40px;">
+        <div class="divider-line"></div>
+        <div class="divider-text">Layer 3 Complete · Modules 14–24</div>
+        <div class="divider-line"></div>
+      </div>
+
+      <h3>Complete Architecture Map — All Three Layers</h3>
+      <table class="data-table" style="margin-top:20px;">
+        <thead>
+          <tr><th>Module</th><th>Layer</th><th>Pattern</th><th>Key Concept</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>00–08</td><td>Layer 1 · Agents</td><td>Basic → Multi-Agent → Workflow</td><td>ADK agent types &amp; orchestration</td></tr>
+          <tr><td>09–11</td><td>Layer 1 · Tools</td><td>Function Tools → MCP</td><td>Custom tool integration</td></tr>
+          <tr><td>12–13</td><td>Layer 2 · Memory</td><td>In-memory → DB Persistence</td><td>Session state management</td></tr>
+          <tr><td>14</td><td>Layer 3</td><td>Feedback Loops</td><td>observe → score → store → adjust</td></tr>
+          <tr><td>15</td><td>Layer 3</td><td>Outcome Tracking</td><td>Correctness, timeliness, efficiency evals</td></tr>
+          <tr><td>16</td><td>Layer 3</td><td>Persistent Behavioral Memory</td><td>pgvector semantic user model</td></tr>
+          <tr><td>17</td><td>Layer 3</td><td>MCP as Intelligence Provider</td><td>Pre-computed scores over raw data</td></tr>
+          <tr><td>18</td><td>Layer 3</td><td>Adaptive Prompting</td><td>Dynamic context injection per user</td></tr>
+          <tr><td>19</td><td>Layer 3</td><td>LLM-as-Judge + Guardrails</td><td>Two-layer output evaluation</td></tr>
+          <tr><td>20</td><td>Layer 3</td><td>Decision Optimization Loop</td><td>Automated threshold tuning via feedback</td></tr>
+          <tr><td>21</td><td>Layer 3</td><td>Exploration vs Exploitation</td><td>Epsilon-greedy / UCB bandit selection</td></tr>
+          <tr><td>22</td><td>Layer 3</td><td>Memory Architectures</td><td>In-context / episodic / semantic / procedural</td></tr>
+          <tr><td>23</td><td>Layer 3</td><td>Multi-Agent Learning</td><td>Shared intelligence hub across agents</td></tr>
+          <tr><td>24</td><td>Layer 3</td><td>Production Patterns</td><td>Circuit breakers, observability, fallbacks</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div><!-- /content -->
+
+  <footer class="footer">
+    <span>ADK Python Masterclass · Lead AI Educator Series</span>
+    <span>google-adk · Python 3.10+ · LiteLLM · MCP Protocol</span>
+  </footer>
+
+</main>
+
+<!-- ─── Go To Top Button ─── -->
+<button id="go-top" title="Back to top" aria-label="Back to top">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="18 15 12 9 6 15"/>
+  </svg>
+</button>
+
+<style>
+  #go-top {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    z-index: 999;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: 1px solid rgba(91, 127, 255, 0.35);
+    background: rgba(16, 18, 26, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: var(--accent);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    transform: translateY(12px) scale(0.9);
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease, background 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  #go-top.visible { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+  #go-top:hover { background: rgba(91,127,255,0.15); border-color: rgba(91,127,255,0.7); box-shadow: 0 4px 24px rgba(91,127,255,0.25); transform: translateY(-2px) scale(1.05); }
+  #go-top:active { transform: translateY(0) scale(0.97); }
+</style>
+
+<script>
+  const sections = document.querySelectorAll('.module');
+  const navItems = document.querySelectorAll('.nav-item');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.id;
+        navItems.forEach(item => {
+          item.classList.toggle('active', item.getAttribute('href') === '#' + id);
+        });
+      }
+    });
+  }, { threshold: 0.25 });
+
+  sections.forEach(s => { if (s.id) observer.observe(s); });
+
+  const goTopBtn = document.getElementById('go-top');
+  window.addEventListener('scroll', () => {
+    goTopBtn.classList.toggle('visible', window.scrollY > 400);
+  }, { passive: true });
+
+  goTopBtn.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+</script>
+</body>
+</html>

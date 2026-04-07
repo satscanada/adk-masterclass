@@ -1,0 +1,61 @@
+{
+  "agents": [
+    {
+      "key": "simple_litellm_agent",
+      "title": "Single Agent",
+      "description": "Google ADK agent backed by your LiteLLM-compatible endpoint.",
+      "prompt_hint": "Ask a normal question.",
+      "module": "simple_litellm_agent.main"
+    },
+    {
+      "key": "mulit_agent",
+      "title": "Multi Agent",
+      "description": "Runs two simple agents on the same topic: one writes 2 paragraphs and the other returns 3 bullet points.",
+      "prompt_hint": "Send a topic like: Artificial intelligence in education",
+      "module": "mulit_agent.main"
+    },
+    {
+      "key": "orchestrate_agent",
+      "title": "Orchestrator Agent",
+      "description": "Routes to one of 3 specialist agents using an explicit agent_type in the prompt: explain, bullet, or quiz.",
+      "prompt_hint": "agent_type: explain\nrequest: Explain what an agent orchestrator does.",
+      "module": "orchestrate_agent.main"
+    },
+    {
+      "key": "streaming_agent",
+      "title": "Streaming Agent",
+      "description": "Module 04: same LiteLLM model as the single agent, but the React chat UI consumes token-by-token chunks from Runner.run_async() via NDJSON streaming.",
+      "prompt_hint": "Ask any question — the answer appears incrementally in the chat UI.",
+      "module": "streaming_agent.main",
+      "supports_streaming": true
+    },
+    {
+      "key": "advanced_agent",
+      "title": "Weather Assistant (tools)",
+      "description": "Module 05: LLM agent with tools — Meteosource current weather by place_id and Celsius/Fahrenheit conversion; non-weather questions get a short refusal.",
+      "prompt_hint": "Weather only, e.g.: What is the weather in calgary?  (Set WEATHER_API_KEY in .env.)",
+      "module": "advanced_agent.main",
+      "supports_streaming": true
+    },
+    {
+      "key": "custom_agent",
+      "title": "Custom Agent (keyword router)",
+      "description": "Module 06: BaseAgent subclass — keyword routing to a tech or general LlmAgent (no LLM for routing); same Runner + streaming pattern as Module 04.",
+      "prompt_hint": "Try tech: Explain Python decorators.  Or general: What is a good book about habits?",
+      "module": "custom_agent.main",
+      "supports_streaming": true
+    },
+    {
+      "key": "multi_agent_banking",
+      "title": "Business Banking (multi-agent)",
+      "description": "Module 07: SequentialAgent pipeline — deposit_agent analyzes cash flow, bill_agent reviews obligations, decision_agent recommends overdraft approval. Uses mock banking data.",
+      "prompt_hint": "Enter a customer ID: CUST-1001 (healthy) or CUST-2002 (weaker profile).",
+      "module": "multi_agent_banking.main",
+      "supports_streaming": true,
+      "suggestions": [
+        {"label": "Acme Corp — healthy profile", "prompt": "CUST-1001"},
+        {"label": "Sunrise Bakery — weaker profile", "prompt": "CUST-2002"}
+      ]
+    }
+  ]
+}
