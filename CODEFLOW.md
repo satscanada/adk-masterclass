@@ -10,7 +10,7 @@ The goal is to help you answer three questions:
 
 ## Big Picture
 
-This project now has 14 main parts:
+This project now has 17 main parts:
 
 - `simple_litellm_agent/`: the actual ADK agent code
 - `mulit_agent/`: a simple Module 02 example with two independent agents
@@ -20,6 +20,8 @@ This project now has 14 main parts:
 - `custom_agent/`: Module 06 — `BaseAgent` keyword router delegating to two `LlmAgent` children
 - `multi_agent_banking/`: Module 07 — `SequentialAgent` pipeline for business banking overdraft approval (deposit, bill, and decision agents)
 - `workflow_agent/`: Module 08 — workflow orchestrators for retail deposit operations (`LoopAgent`, `ParallelAgent`, and composition)
+- `function_tools_agent/`: Module 09 — function tools, long-running tool flow, and agent-as-a-tool composition
+- `mcp_client/`: Module 10 — MCP client lesson using Redis MCP server tools for business banking memory
 - `agents.json`: the list of agents shown in the UI
 - `agent_registry.py`: a small registry that lists available agents
 - `api_app.py`: the shared HTTP API for external clients
@@ -27,6 +29,7 @@ This project now has 14 main parts:
 - `ui/`: the React + Vite + Tailwind chat UI
 - `run_banking.sh`: optional CLI wrapper for Module 07 (approve / deny / both customers, no API or React)
 - `run_workflow.sh`: optional CLI wrapper for Module 08 (workflow scenarios, no API or React)
+- `run_function_tools.sh`: optional CLI wrapper for Module 09 (function-tools scenarios, no API or React)
 
 There are also `tests/agent_registry_smoke_test.py`, `tests/smoke_test.py`, `tests/mulit_agent_smoke_test.py`, `tests/orchestrate_agent_smoke_test.py`, `tests/multi_agent_banking_smoke_test.py`, and `tests/api_smoke_test.py`, which check that the registry, agents, and API work correctly.
 
@@ -55,19 +58,24 @@ If you are a beginner, read the files in this order:
 19. `workflow_agent/workflow_tools.py`
 20. `workflow_agent/agent.py`
 21. `workflow_agent/main.py`
-22. `agents.json`
-23. `agent_registry.py`
-24. `api_app.py`
-25. `streamlit_app.py`
-26. `AGENT_HELP.md` (module reference; keep in sync with `ui/src/help/agentHelp.js`)
-27. `ui/src/help/agentHelp.js` and `ui/src/help/HelpOverlay.jsx`
-28. `ui/src/App.jsx`
-29. `tests/agent_registry_smoke_test.py`
-30. `tests/smoke_test.py`
-31. `tests/mulit_agent_smoke_test.py`
-32. `tests/orchestrate_agent_smoke_test.py`
-33. `tests/multi_agent_banking_smoke_test.py`
-34. `tests/api_smoke_test.py`
+22. `function_tools_agent/function_tools.py`
+23. `function_tools_agent/agent.py`
+24. `function_tools_agent/main.py`
+25. `mcp_client/agent.py`
+26. `mcp_client/main.py`
+27. `agents.json`
+28. `agent_registry.py`
+29. `api_app.py`
+30. `streamlit_app.py`
+31. `AGENT_HELP.md` (module reference; keep in sync with `ui/src/help/agentHelp.js`)
+32. `ui/src/help/agentHelp.js` and `ui/src/help/HelpOverlay.jsx`
+33. `ui/src/App.jsx`
+34. `tests/agent_registry_smoke_test.py`
+35. `tests/smoke_test.py`
+36. `tests/mulit_agent_smoke_test.py`
+37. `tests/orchestrate_agent_smoke_test.py`
+38. `tests/multi_agent_banking_smoke_test.py`
+39. `tests/api_smoke_test.py`
 
 That order goes from simple configuration to the full app flow.
 
@@ -81,6 +89,7 @@ adk-masterclass/
 ├── requirements.txt
 ├── run.sh
 ├── run_banking.sh
+├── run_function_tools.sh
 ├── run_workflow.sh
 ├── runstreamlit.sh
 ├── api_app.py
@@ -136,6 +145,16 @@ adk-masterclass/
 │   ├── agent.py
 │   ├── main.py
 │   └── workflow_tools.py
+├── function_tools_agent/
+│   ├── __init__.py
+│   ├── agent.py
+│   ├── main.py
+│   └── function_tools.py
+├── mcp_client/
+│   ├── __init__.py
+│   ├── agent.py
+│   ├── main.py
+│   └── README.md
 └── simple_litellm_agent/
     ├── __init__.py
     ├── config.py
@@ -153,6 +172,7 @@ Lists Python packages this project needs:
 - `litellm`: adapter for OpenAI-compatible model APIs
 - `python-dotenv`: loads environment variables from `.env`
 - `streamlit`: web UI
+- `celery[redis]`: optional Module 09 async task queue demo (Redis broker/backend)
 
 ### `simple_litellm_agent/config.py`
 
@@ -422,6 +442,71 @@ It:
 
 Think of this file as: "scenario-driven CLI runner for Module 08 workflow lessons."
 
+### `function_tools_agent/function_tools.py`
+
+This file defines Module 09 function tools.
+
+It:
+
+- reuses Module 08 retail tools and Module 07 business tools for real examples
+- provides basic snapshot functions suitable for `tools=[...]`
+- provides a long-running starter function (`ask_for_exception_clearance`) returning pending + ticket ID
+- provides a completion function (`apply_exception_clearance`) for the resumed turn
+- includes reset helper state for repeatable demos
+
+Think of this file as: "custom function tools with banking-domain outputs."
+
+### `function_tools_agent/agent.py`
+
+This file builds three Module 09 agent patterns.
+
+It:
+
+- creates a basic-tools `LlmAgent` using plain Python functions
+- creates a long-running `LlmAgent` using `LongRunningFunctionTool`
+- creates an agent-as-a-tool root `LlmAgent` using `AgentTool(...)`
+- creates a Celery-backed async banking `LlmAgent` for queued recalculation tasks
+
+Think of this file as: "FunctionTool + LongRunningFunctionTool + AgentTool in one lesson."
+
+### `function_tools_agent/main.py`
+
+This file runs Module 09 from the CLI.
+
+It:
+
+- supports scenarios `basic`, `long-running`, `agent-as-tool`, and `celery`
+- demonstrates long-running flow in two turns (pending first turn, approval `FunctionResponse` second turn)
+- prints one final markdown result for terminal learning
+
+Think of this file as: "CLI harness for all Module 09 tool patterns."
+
+### `mcp_client/agent.py`
+
+This file builds the Module 10 MCP client agent.
+
+It:
+
+- creates one `LlmAgent` for business banking advisory
+- attaches `McpToolset` with `StdioConnectionParams` to connect to a Redis MCP server process
+- reads MCP command/args/timeout from `MODULE10_MCP_COMMAND`, `MODULE10_MCP_ARGS`, and `MODULE10_MCP_TIMEOUT`
+- instructs the model to use customer-scoped Redis key prefixes for memory (`banking:customer:{id}:...`)
+
+Think of this file as: "ADK agent + MCP bridge to Redis tools."
+
+### `mcp_client/main.py`
+
+This file runs Module 10 with both blocking and streaming paths.
+
+It:
+
+- caches a `Runner` for the process
+- exposes `run_prompt(...)` for `POST /api/chat` and CLI
+- exposes async `stream_prompt(...)` for `POST /api/chat/stream`
+- raises actionable setup errors when Redis MCP command/args are not available
+
+Think of this file as: "MCP client lesson runner that is UI-ready."
+
 ### `agents.json`
 
 This file stores the list of agents for the app.
@@ -498,6 +583,18 @@ It:
 - keeps this lesson independent from API and UI agent registration
 
 Think of this file as: "CLI harness for LoopAgent, ParallelAgent, and composition demos."
+
+### `run_function_tools.sh`
+
+This script runs Module 09 examples.
+
+It:
+
+- clears terminal output before runs
+- supports `basic`, `long-running`, `agent-as-tool`, `celery`, or `all`
+- runs `python -m function_tools_agent.main` with chosen scenario
+
+Think of this file as: "single command entrypoint for Module 09 demos."
 
 ### `runstreamlit.sh`
 
@@ -910,6 +1007,84 @@ Short version:
 
 ```text
 run_workflow.sh -> workflow_agent/main.py -> Loop/Parallel/Composition workflow agents -> text output
+```
+
+### Flow 11: Run Module 09 function tools directly
+
+Command:
+
+```bash
+./.venv/bin/python -m function_tools_agent.main --scenario basic RET-3101
+./.venv/bin/python -m function_tools_agent.main --scenario long-running \
+  "Request manual approval for RET-4420 due to source-of-funds check"
+./.venv/bin/python -m function_tools_agent.main --scenario agent-as-tool CUST-1001
+./.venv/bin/python -m function_tools_agent.main --scenario celery RET-3101
+```
+
+What happens:
+
+1. Python starts `function_tools_agent/main.py`.
+2. Scenario builds one of four agents:
+   - `basic` -> plain function tools in `tools=[...]`
+   - `long-running` -> `LongRunningFunctionTool` plus a completion tool
+   - `agent-as-tool` -> root `LlmAgent` delegates via `AgentTool`
+   - `celery` -> async tool flow via Celery queue + Redis backend
+3. For `long-running`, turn 1 returns pending state and function call ID.
+4. CLI simulates external approval by sending a `FunctionResponse` in turn 2.
+5. Agent finalizes and prints completion markdown.
+
+Short version:
+
+```text
+terminal -> function_tools_agent/main.py -> FunctionTool/LongRunningFunctionTool/AgentTool path -> final output
+```
+
+### Flow 12: Run the Module 09 helper script
+
+Command:
+
+```bash
+./run_function_tools.sh
+./run_function_tools.sh long-running
+./run_function_tools.sh agent-as-tool RET-3101
+./run_function_tools.sh celery RET-3101
+```
+
+What happens:
+
+1. Script clears the terminal for readable logs.
+2. It runs one scenario or all scenarios in sequence.
+3. Each scenario invokes `python -m function_tools_agent.main`.
+4. Output shows the scenario banner and final markdown result.
+
+Short version:
+
+```text
+run_function_tools.sh -> function_tools_agent/main.py -> module09 scenarios
+```
+
+### Flow 13: Run the Module 10 MCP client lesson
+
+Command:
+
+```bash
+./.venv/bin/python -m mcp_client.main \
+  "CUST-1001: summarize profile and save summary + next action in Redis memory."
+```
+
+What happens:
+
+1. Python starts `mcp_client/main.py`.
+2. `build_runner()` creates a `Runner` for one `LlmAgent` from `mcp_client/agent.py`.
+3. The agent's `tools=[McpToolset(...)]` launches the Redis MCP server process over stdio.
+4. During the run, ADK discovers MCP tools and proxies tool calls through the MCP session.
+5. The agent stores/retrieves business-banking memory using customer-scoped Redis keys.
+6. The same module supports `run_prompt(...)` (blocking) and `stream_prompt(...)` (NDJSON streaming in React UI).
+
+Short version:
+
+```text
+terminal or chat UI -> mcp_client/main.py -> LlmAgent + McpToolset -> Redis MCP server -> Redis-backed memory response
 ```
 
 ## The Core Relationship Between Files

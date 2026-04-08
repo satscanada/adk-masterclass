@@ -1566,11 +1566,11 @@ composition = <span class="cl">SequentialAgent</span>(
         <span class="module-num">MODULE 09</span>
         <div>
           <h2>Custom Function Tools</h2>
-          <div class="module-meta">FunctionTool · ToolContext · session.state · zero boilerplate</div>
+          <div class="module-meta">FunctionTool · LongRunningFunctionTool · AgentTool · ToolContext</div>
         </div>
       </div>
 
-      <p>ADK converts plain Python functions to tools with zero boilerplate — add callables to <span class="ic">tools=[]</span>; type hints and docstrings become the tool schema. <strong>This repo already does this end-to-end:</strong> Module 08 retail deposit tools live in <span class="ic">workflow_agent/workflow_tools.py</span> (profile, deposits, AML, velocity, exception queue); Module 07 business banking tools live in <span class="ic">multi_agent_banking/banking_tools.py</span> (deposits, balances, bills, overdraft request). Both return structured <span class="ic">dict</span>s so the model gets JSON-friendly facts from mock &ldquo;core banking&rdquo; data. For tools that must read or write <strong>session state</strong> directly, add <span class="ic">tool_context: ToolContext</span> — ADK injects it; the LLM never sees it (pattern below extends the same agents).</p>
+      <p>ADK converts plain Python functions to tools with zero boilerplate — add callables to <span class="ic">tools=[]</span>; type hints and docstrings become the tool schema. <strong>This repo now demonstrates all key Module 09 patterns:</strong> function tools, long-running function tools, agent-as-a-tool delegation, and a Celery+Redis-backed async tool path in <span class="ic">function_tools_agent/</span>. For tools that must read or write <strong>session state</strong> directly, add <span class="ic">tool_context: ToolContext</span> — ADK injects it; the LLM never sees it (pattern below extends the same agents).</p>
 
       <div class="code-wrapper">
         <div class="code-header">
@@ -1609,6 +1609,100 @@ composition = <span class="cl">SequentialAgent</span>(
     }
 <span class="cm"># Also in this file: get_recent_deposits, run_velocity_check,</span>
 <span class="cm"># fetch_next_deposit_exception, clear_deposit_exception, get_deposit_offer_request</span></code></pre>
+      </div>
+
+      <h3>Long Running Function Tools (Module 09 sample)</h3>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">function_tools_agent/agent.py — LongRunningFunctionTool</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">from</span> simple_litellm_agent.config <span class="kw">import</span> <span class="fn">get_settings</span>
+<span class="kw">from</span> google.adk.tools <span class="kw">import</span> <span class="cl">LongRunningFunctionTool</span>
+
+settings = <span class="fn">get_settings</span>()
+llm = <span class="fn">_build_llm</span>(settings)
+
+long_tool = <span class="cl">LongRunningFunctionTool</span>(ask_for_exception_clearance)
+
+agent = <span class="cl">LlmAgent</span>(
+    name=<span class="st">"module09_long_running_agent"</span>,
+    model=llm,
+    instruction=<span class="st">"Start approval, then complete after approval function response."</span>,
+    tools=[long_tool, apply_exception_clearance],
+)</code></pre>
+      </div>
+
+      <h3>Agent-as-a-Tool (Module 09 sample)</h3>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">function_tools_agent/agent.py — AgentTool</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">from</span> simple_litellm_agent.config <span class="kw">import</span> <span class="fn">get_settings</span>
+<span class="kw">from</span> google.adk.tools <span class="kw">import</span> <span class="cl">AgentTool</span>
+
+settings = <span class="fn">get_settings</span>()
+llm = <span class="fn">_build_llm</span>(settings)
+
+root = <span class="cl">LlmAgent</span>(
+    name=<span class="st">"module09_agent_as_tool_root"</span>,
+    model=llm,
+    instruction=<span class="st">"Always delegate to deposit_specialist_agent."</span>,
+    tools=[<span class="cl">AgentTool</span>(agent=deposit_specialist_agent, skip_summarization=<span class="kw">True</span>)],
+)</code></pre>
+      </div>
+
+      <h3>Celery + Redis backed tool (Module 09 sample)</h3>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">function_tools_agent/function_tools.py — Celery tools</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">import</span> os
+<span class="kw">from</span> celery <span class="kw">import</span> Celery
+
+redis_url = os.getenv(<span class="st">"MODULE09_CELERY_REDIS_URL"</span>, <span class="st">"redis://localhost:6379/0"</span>)
+
+app = Celery(
+    <span class="st">"module09_celery_banking"</span>,
+    broker=redis_url,
+    backend=redis_url,
+)
+
+@app.task(name=<span class="st">"module09.recalc_deposit_score"</span>)
+<span class="kw">def</span> <span class="fn">recalc_deposit_score_task</span>(customer_id: <span class="cl">str</span>) -> dict:
+    <span class="kw">return</span> _compute_deposit_recalc_payload(customer_id)
+
+<span class="kw">def</span> <span class="fn">submit_deposit_recalc_task</span>(customer_id: <span class="cl">str</span>) -> dict:
+    task = recalc_deposit_score_task.delay(customer_id.strip().upper())
+    <span class="kw">return</span> {<span class="st">"status"</span>: <span class="st">"queued"</span>, <span class="st">"task_id"</span>: task.id}
+
+<span class="kw">def</span> <span class="fn">get_deposit_recalc_task_status</span>(task_id: <span class="cl">str</span>) -> dict:
+    result = app.AsyncResult(task_id)
+    <span class="kw">return</span> {<span class="st">"state"</span>: result.state, <span class="st">"ready"</span>: result.ready(), <span class="st">"result"</span>: result.result <span class="kw">if</span> result.ready() <span class="kw">else</span> <span class="kw">None</span>}</code></pre>
+      </div>
+
+      <div class="arch-diagram">
+        <strong style="color:var(--text); display:block; margin-bottom:16px;">Module 09 Celery Flow — Agent + Redis Queue</strong>
+        <div class="arch-row">
+          <div class="arch-box accent">LlmAgent<br><span style="font-size:10px">module09_celery_banking_agent</span></div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box yellow">submit_deposit_recalc_task<br><span style="font-size:10px">returns task_id</span></div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box red">Redis Broker<br><span style="font-size:10px">task queue</span></div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box green">Celery Worker<br><span style="font-size:10px">module09.recalc_deposit_score</span></div>
+        </div>
+        <div class="arch-row" style="margin-top:10px;">
+          <div class="arch-box red">Redis Result Backend<br><span style="font-size:10px">state + payload</span></div>
+          <div class="arch-arrow">←</div>
+          <div class="arch-box yellow">get_deposit_recalc_task_status<br><span style="font-size:10px">first check + follow-up after app wait</span></div>
+          <div class="arch-arrow">←</div>
+          <div class="arch-box accent">Main app grace wait<br><span style="font-size:10px">e.g. 3s, then re-check</span></div>
+          <div class="arch-arrow">←</div>
+          <div class="arch-box accent">LlmAgent Final Reply<br><span style="font-size:10px">latest state/result</span></div>
+        </div>
       </div>
 
       <div class="code-wrapper">
@@ -1654,7 +1748,8 @@ composition = <span class="cl">SequentialAgent</span>(
           <div class="code-filename">Pattern: ToolContext + session.state (extend Modules 07–08)</div>
           <span class="code-lang">PYTHON</span>
         </div>
-        <pre><code><span class="kw">from</span> google.adk.tools.tool_context <span class="kw">import</span> <span class="cl">ToolContext</span>
+        <pre><code><span class="kw">from</span> simple_litellm_agent.config <span class="kw">import</span> <span class="fn">get_settings</span>
+<span class="kw">from</span> google.adk.tools.tool_context <span class="kw">import</span> <span class="cl">ToolContext</span>
 
 <span class="kw">def</span> <span class="fn">append_ops_audit_note</span>(customer_id: <span class="cl">str</span>, note: <span class="cl">str</span>, tool_context: <span class="cl">ToolContext</span>) -> dict:
     <span class="dc">"""Append a short ops audit line to session state (not in repo; same pattern as prefs).
@@ -1672,7 +1767,7 @@ composition = <span class="cl">SequentialAgent</span>(
 <span class="cm"># Wire plain tools + ToolContext tool together on one agent</span>
 agent = <span class="cl">LlmAgent</span>(
     name=<span class="st">"deposit_tools_agent"</span>,
-    model=<span class="cl">LiteLlm</span>(model=<span class="st">"openai/your-litellm-model"</span>),
+    model=<span class="fn">_build_llm</span>(<span class="fn">get_settings</span>()),
     instruction=(
         <span class="st">"Use get_deposit_profile / get_monthly_deposits for facts; "</span>
         <span class="st">"call append_ops_audit_note when the user asks to log an ops action."</span>
@@ -1697,90 +1792,82 @@ agent = <span class="cl">LlmAgent</span>(
       <div class="module-header">
         <span class="module-num">MODULE 10</span>
         <div>
-          <h2>MCP Tools — Using External MCP Servers</h2>
-          <div class="module-meta">McpToolset · StdioConnectionParams · SseConnectionParams · tool_filter</div>
+          <h2>MCP Client — Redis Business Banking</h2>
+          <div class="module-meta">McpToolset · StdioConnectionParams · Redis MCP · chat UI integration</div>
         </div>
       </div>
 
-      <p>MCP (Model Context Protocol) is an open standard for exposing tools to LLMs. ADK's <span class="ic">McpToolset</span> lets your agent use any MCP-compliant server as a toolset. Place <span class="ic">McpToolset</span> directly in <span class="ic">tools=[]</span> — ADK handles connection, tool discovery, call proxying, and cleanup.</p>
+      <p><strong>Implemented in this repo:</strong> Module 10 lives in <span class="ic">mcp_client/</span> and adds one business-banking agent that uses ADK as an MCP client. The agent connects to a Redis MCP server over stdio, then persists and retrieves customer working memory (summary + next action) using customer-scoped keys. This module is now registered in <span class="ic">agents.json</span> as <span class="ic">mcp_client</span>, so it runs in the same React chat UI as Modules 04–07.</p>
 
       <div class="arch-diagram">
-        <strong style="color:var(--text); display:block; margin-bottom:16px;">MCP Integration — ADK as MCP Client</strong>
+        <strong style="color:var(--text); display:block; margin-bottom:16px;">Module 10 Wiring — ADK MCP client to Redis</strong>
         <div class="arch-row">
-          <div class="arch-box accent">LlmAgent<br><span style="font-size:10px">tools=[McpToolset(...)]</span></div>
+          <div class="arch-box accent">React Chat UI<br><span style="font-size:10px">agent_key=mcp_client</span></div>
           <div class="arch-arrow">→</div>
-          <div class="arch-box red">McpToolset<br><span style="font-size:10px">discovers + proxies tools</span></div>
+          <div class="arch-box red">FastAPI + Registry<br><span style="font-size:10px">POST /api/chat/stream</span></div>
           <div class="arch-arrow">→</div>
-          <div class="arch-box yellow">StdioConnectionParams<br><span style="font-size:10px">spawns subprocess</span></div>
+          <div class="arch-box yellow">LlmAgent + McpToolset<br><span style="font-size:10px">stdio MCP session</span></div>
           <div class="arch-arrow">→</div>
-          <div class="arch-box green">npx @mcp/server-filesystem<br><span style="font-size:10px">or any MCP server</span></div>
+          <div class="arch-box green">Redis MCP Server<br><span style="font-size:10px">business memory keys</span></div>
         </div>
       </div>
 
       <div class="code-wrapper">
         <div class="code-header">
-          <div class="code-filename">module_10_mcp_tools.py — filesystem MCP server</div>
+          <div class="code-filename">mcp_client/agent.py — Module 10 agent</div>
           <span class="code-lang">PYTHON</span>
         </div>
         <pre><code><span class="kw">from</span> google.adk.agents <span class="kw">import</span> <span class="cl">LlmAgent</span>
-<span class="kw">from</span> google.adk.models.lite_llm <span class="kw">import</span> <span class="cl">LiteLlm</span>
 <span class="kw">from</span> google.adk.tools.mcp_tool <span class="kw">import</span> <span class="cl">McpToolset</span>
 <span class="kw">from</span> google.adk.tools.mcp_tool.mcp_session_manager <span class="kw">import</span> <span class="cl">StdioConnectionParams</span>
 <span class="kw">from</span> mcp <span class="kw">import</span> <span class="cl">StdioServerParameters</span>
 
 agent = <span class="cl">LlmAgent</span>(
-    name=<span class="st">"filesystem_agent"</span>,
-    model=<span class="cl">LiteLlm</span>(model=<span class="st">"openai/gpt-4o-mini"</span>),
-    description=<span class="st">"File system assistant using MCP filesystem server."</span>,
-    instruction=<span class="st">"Use MCP tools to list directories and read files."</span>,
+    name=<span class="st">"module10_mcp_redis_banking_agent"</span>,
+    description=<span class="st">"Business banking assistant using Redis MCP memory."</span>,
+    instruction=<span class="st">"""Use Redis MCP tools for customer memory.
+Key prefix: banking:customer:{CUSTOMER_ID}:
+- summary
+- next_action
+Fetch existing memory first, then update it."""</span>,
     tools=[
         <span class="cl">McpToolset</span>(
             connection_params=<span class="cl">StdioConnectionParams</span>(
                 server_params=<span class="cl">StdioServerParameters</span>(
-                    command=<span class="st">"npx"</span>,
-                    args=[
-                        <span class="st">"-y"</span>,
-                        <span class="st">"@modelcontextprotocol/server-filesystem"</span>,
-                        <span class="st">"/absolute/path/to/your/folder"</span>,  <span class="cm"># MUST be absolute</span>
-                    ],
+                    command=<span class="st">"uvx"</span>,  <span class="cm"># MODULE10_MCP_COMMAND</span>
+                    args=[<span class="st">"--from"</span>, <span class="st">"redis-mcp-server@latest"</span>, <span class="st">"redis-mcp-server"</span>, <span class="st">"--url"</span>, <span class="st">"redis://127.0.0.1:6379/0"</span>],  <span class="cm"># MODULE10_MCP_ARGS (+ env composed URL)</span>
                 ),
+                timeout=<span class="nm">20.0</span>,  <span class="cm"># MODULE10_MCP_TIMEOUT</span>
             ),
-            <span class="cm"># Optional: expose only specific tools from the server</span>
-            tool_filter=[<span class="st">"list_directory"</span>, <span class="st">"read_file"</span>],
         )
     ],
 )</code></pre>
       </div>
 
-      <h3>Remote MCP Server (SSE / HTTP)</h3>
       <div class="code-wrapper">
         <div class="code-header">
-          <div class="code-filename">module_10_mcp_tools.py — remote SSE server</div>
-          <span class="code-lang">PYTHON</span>
+          <div class="code-filename">agents.json + mcp_client/main.py — chat UI stitching</div>
+          <span class="code-lang">JSON + PYTHON</span>
         </div>
-        <pre><code><span class="kw">from</span> google.adk.tools.mcp_tool.mcp_session_manager <span class="kw">import</span> <span class="cl">SseConnectionParams</span>
+        <pre><code><span class="cm">// agents.json</span>
+{
+  <span class="st">"key"</span>: <span class="st">"mcp_client"</span>,
+  <span class="st">"title"</span>: <span class="st">"MCP Client (Redis banking)"</span>,
+  <span class="st">"module"</span>: <span class="st">"mcp_client.main"</span>,
+  <span class="st">"supports_streaming"</span>: <span class="kw">true</span>
+}
 
-<span class="cm"># For remote MCP servers (deployed to Cloud Run, etc.)</span>
-agent = <span class="cl">LlmAgent</span>(
-    name=<span class="st">"remote_mcp_agent"</span>,
-    model=<span class="cl">LiteLlm</span>(model=<span class="st">"openai/gpt-4o-mini"</span>),
-    tools=[
-        <span class="cl">McpToolset</span>(
-            connection_params=<span class="cl">SseConnectionParams</span>(
-                url=<span class="st">"https://your-mcp-server.run.app/sse"</span>,
-                headers={<span class="st">"Authorization"</span>: <span class="st">"Bearer your-token"</span>},
-            ),
-        )
-    ],
-)</code></pre>
+<span class="cm"># mcp_client/main.py</span>
+<span class="kw">def</span> <span class="fn">run_prompt</span>(prompt, user_id=<span class="st">"demo-user"</span>, session_id=<span class="nm">None</span>): ...
+<span class="kw">async def</span> <span class="fn">stream_prompt</span>(prompt, user_id=<span class="st">"demo-user"</span>, session_id=<span class="nm">None</span>): ...</code></pre>
       </div>
 
       <table class="data-table">
-        <thead><tr><th>Connection Type</th><th>Use When</th><th>Params class</th></tr></thead>
+        <thead><tr><th>Lesson output</th><th>Where implemented</th><th>Why it matters</th></tr></thead>
         <tbody>
-          <tr><td>Stdio</td><td>Local npm/python MCP server process</td><td><span class="ic">StdioConnectionParams</span></td></tr>
-          <tr><td>SSE (Server-Sent Events)</td><td>Remote HTTP MCP server</td><td><span class="ic">SseConnectionParams</span></td></tr>
-          <tr><td>Streamable HTTP</td><td>Production, stateless, scalable</td><td><span class="ic">StreamableHTTPConnectionParams</span></td></tr>
+          <tr><td>Single MCP client agent</td><td><span class="ic">mcp_client/agent.py</span></td><td>Keeps Module 10 focused on ADK client-side MCP integration</td></tr>
+          <tr><td>Business banking Redis key strategy</td><td>Agent instruction in <span class="ic">mcp_client/agent.py</span></td><td>Demonstrates practical memory persistence pattern</td></tr>
+          <tr><td>API + React chat compatibility</td><td><span class="ic">mcp_client/main.py</span> + <span class="ic">agents.json</span></td><td>Module is immediately usable in the same chat UI as earlier lessons</td></tr>
         </tbody>
       </table>
     </div>

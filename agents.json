@@ -56,6 +56,18 @@
         {"label": "Acme Corp — healthy profile", "prompt": "CUST-1001"},
         {"label": "Sunrise Bakery — weaker profile", "prompt": "CUST-2002"}
       ]
+    },
+    {
+      "key": "mcp_client",
+      "title": "MCP Client (Redis banking)",
+      "description": "Module 10: single LlmAgent using McpToolset (Redis MCP server) to persist and retrieve business banking memory per customer.",
+      "prompt_hint": "Try: CUST-1001 — summarize profile and store summary + next action in Redis memory.",
+      "module": "mcp_client.main",
+      "supports_streaming": true,
+      "suggestions": [
+        {"label": "CUST-1001 — save banking summary", "prompt": "CUST-1001: summarize profile and save to Redis memory."},
+        {"label": "CUST-2002 — risk coaching plan", "prompt": "CUST-2002: retrieve memory (if any), then save a coaching next action."}
+      ]
     }
   ]
 }

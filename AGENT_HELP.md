@@ -20,6 +20,7 @@ This file is the **markdown companion** to the in-app Help panel in the React UI
 | 05 Weather (tools) | `advanced_agent` | Weather-only assistant: Meteosource `place_id` lookup + °C/°F tool; refuses other topics with a fixed message. | `POST /api/chat` or `POST /api/chat/stream` |
 | 06 Custom Agent | `custom_agent` | `BaseAgent` keyword router to tech vs general `LlmAgent` children; delegation via `run_async` (no LLM for routing). | `POST /api/chat` or `POST /api/chat/stream` |
 | 07 Business Banking | `multi_agent_banking` | `SequentialAgent` pipeline: deposit → bill → decision; mock tools; `demo_expected_decision`; streaming audit trail in UI; optional CLI script. | `POST /api/chat` or `POST /api/chat/stream` |
+| 10 MCP Client (Redis banking) | `mcp_client` | Single `LlmAgent` + `McpToolset` (Redis MCP server). Persists and reads customer-scoped business banking memory keys in Redis. | `POST /api/chat` or `POST /api/chat/stream` |
 
 ### Module 01 — Single Agent
 
@@ -70,6 +71,17 @@ This file is the **markdown companion** to the in-app Help panel in the React UI
 - **CLI (no UI):** From the repo root, `./run_banking.sh` runs both customers; `./run_banking.sh approve` → `CUST-1001`; `./run_banking.sh deny` → `CUST-2002`. The script calls `python -m multi_agent_banking.main` and prints the same audit-style lines the module’s `__main__` formats. Arguments are lowercased with `tr` for **macOS Bash 3.2** compatibility.
 - **Tests:** `tests/multi_agent_banking_smoke_test.py` — mock OpenAI server, both customers, pipeline banner and tool data checks.
 - **Further reading:** `README.md` (banking section + project tree), `CODEFLOW.md` (`multi_agent_banking/*`, `run_banking.sh`, Flow 7–8, `App.jsx`), `adk_python_masterclass.html` (Module 07).
+
+### Module 10 — MCP Client (Redis banking)
+
+- **Python package:** `mcp_client/`
+- **Entry:** `mcp_client.main:run_prompt` (blocking) and `mcp_client.main:stream_prompt` (NDJSON streaming)
+- **Pattern:** One `LlmAgent` with `McpToolset` and `StdioConnectionParams`; the toolset launches a Redis MCP server process and proxies its tools into ADK tool calls.
+- **Business use case:** Customer-scoped Redis memory for business banking advisory:
+  - `banking:customer:{CUSTOMER_ID}:summary`
+  - `banking:customer:{CUSTOMER_ID}:next_action`
+- **Environment:** Configure MCP process with `MODULE10_MCP_COMMAND`, `MODULE10_MCP_ARGS`, and optional `MODULE10_MCP_TIMEOUT`.
+- **React UI:** Registered in `agents.json` with `supports_streaming: true`, so the same chat UI can run this MCP lesson via `POST /api/chat/stream`.
 
 ## Adding a new agent or module
 

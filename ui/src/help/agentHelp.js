@@ -107,4 +107,14 @@ export const HELP_MODULES = [
       'POST /api/chat or POST /api/chat/stream — markdown reply + Pipeline Audit Trail (per-agent tools, JSON in/out). agents.json suggestions = Quick start chips. CLI: ./run_banking.sh [approve|deny|both].',
     supportsStreaming: true,
   },
+  {
+    module: '10',
+    title: 'MCP Client (Redis banking)',
+    agentKey: 'mcp_client',
+    pattern:
+      'Single LlmAgent with McpToolset over StdioConnectionParams. Connects to a Redis MCP server and uses customer-scoped Redis keys for business banking memory.',
+    apiSurface:
+      'POST /api/chat or POST /api/chat/stream — same chat UI flow as other registered modules. Requires Redis MCP server command configured in MODULE10_MCP_COMMAND/MODULE10_MCP_ARGS.',
+    supportsStreaming: true,
+  },
 ]

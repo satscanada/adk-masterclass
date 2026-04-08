@@ -4,7 +4,7 @@ This project shows a small but useful **Google Agent Development Kit (ADK)** lea
 
 It now includes:
 
-- the Python agent modules (including Module 06: a `BaseAgent` keyword router in `custom_agent/`, Module 07: a multi-agent business banking pipeline in `multi_agent_banking/`, and Module 08: workflow orchestration patterns in `workflow_agent/`)
+- the Python agent modules (including Module 06: a `BaseAgent` keyword router in `custom_agent/`, Module 07: a multi-agent business banking pipeline in `multi_agent_banking/`, Module 08: workflow orchestration patterns in `workflow_agent/`, Module 09: function-tool patterns in `function_tools_agent/`, and Module 10: MCP client + Redis banking memory in `mcp_client/`)
 - a FastAPI layer that exposes those agents over HTTP
 - the original Streamlit UI
 - a React + Vite + Tailwind chat UI that talks to the API
@@ -42,6 +42,7 @@ adk-masterclass/
 ├── agent_registry.py
 ├── run.sh
 ├── run_banking.sh
+├── run_function_tools.sh
 ├── run_workflow.sh
 ├── runstreamlit.sh
 ├── streamlit_app.py
@@ -95,6 +96,16 @@ adk-masterclass/
 │   ├── agent.py
 │   ├── main.py
 │   └── workflow_tools.py
+├── function_tools_agent/
+│   ├── __init__.py
+│   ├── agent.py
+│   ├── main.py
+│   └── function_tools.py
+├── mcp_client/
+│   ├── __init__.py
+│   ├── agent.py
+│   ├── main.py
+│   └── README.md
 └── simple_litellm_agent/
     ├── __init__.py
     ├── agent.py
@@ -189,6 +200,25 @@ Keep **`AGENT_HELP.md`** and **`agentHelp.js`** aligned whenever you add or rena
 - `workflow_agent/main.py`
   - CLI-focused Module 08 runner with `run_prompt(..., scenario=loop|parallel|composition)`, per-scenario runner caching, and no `agents.json` registration (intentionally no API/UI wiring for this lesson).
 
+- `function_tools_agent/function_tools.py`
+  - Module 09: custom function tools built on top of existing datasets (`workflow_agent` + `multi_agent_banking`), plus a long-running approval starter/finalizer and a Celery+Redis-backed async task tool pair (`submit_deposit_recalc_task`, `get_deposit_recalc_task_status`).
+
+- `function_tools_agent/agent.py`
+  - Module 09: three agent setups:
+    - basic function tools (`tools=[python_functions...]`)
+    - long-running function tools (`LongRunningFunctionTool`)
+    - agent-as-a-tool (`AgentTool` with `skip_summarization=True`)
+    - celery-backed async tool scenario (`create_celery_banking_agent`)
+
+- `function_tools_agent/main.py`
+  - Module 09 runner with `--scenario basic|long-running|agent-as-tool|celery`. The long-running scenario demonstrates a two-turn flow: pending tool call, then a synthetic approval `FunctionResponse` to resume and complete.
+
+- `mcp_client/agent.py`
+  - Module 10: single business-banking `LlmAgent` with `McpToolset` + `StdioConnectionParams` to a Redis MCP server process (configured by env vars).
+
+- `mcp_client/main.py`
+  - Module 10: blocking `run_prompt(...)` and async `stream_prompt(...)`, so this MCP lesson is stitched into the same API + React chat flow as the streaming modules.
+
 - `agents.json`
   - Stores the agent list for the UI
   - Keeps beginner-friendly metadata outside Python code
@@ -219,6 +249,11 @@ Keep **`AGENT_HELP.md`** and **`agentHelp.js`** aligned whenever you add or rena
   - Supports `loop`, `parallel`, `composition`, or `all`
   - Supports customer aliases (`strong`/`healthy` -> `RET-3101`, `weak`/`risk`/`week` -> `RET-4420`; `week` catches a common typo for weak)
   - Keeps workflow exercises independent of API/React wiring
+
+- `run_function_tools.sh`
+  - Optional: runs Module 09 function tool demos from the terminal
+  - Supports `basic`, `long-running`, `agent-as-tool`, `celery`, or `all`
+  - Keeps Module 09 as a CLI teaching module (no UI wiring required)
 
 - `tests/agent_registry_smoke_test.py`
   - Checks that the registry loads the same agents defined in `agents.json`
@@ -456,6 +491,84 @@ cd /Users/sathishkr/PycharmProjects/adk-masterclass
 ```
 
 **Teaching outcomes (mock data):** the composition decision step calls `get_deposit_offer_request`, and the instructions force `Recommended Offer` to match tool field `demo_expected_offer` so outputs stay deterministic (`PREMIUM_PLUS` for `RET-3101`, `SAFE_GROWTH` for `RET-4420`).
+
+## Run custom function tools (Module 09)
+
+This lesson extends Module 09 with runnable examples for:
+
+- **Function Tools:** plain Python functions in `tools=[]`
+- **Long Running Function Tools:** `LongRunningFunctionTool` for async approval-style operations
+- **Agent-as-a-Tool:** delegate from one `LlmAgent` to another via `AgentTool`
+- **Celery + Redis tool:** queue async banking recalculation jobs and poll status/results
+
+```bash
+cd /Users/sathishkr/PycharmProjects/adk-masterclass
+
+# Direct module run:
+./.venv/bin/python -m function_tools_agent.main --scenario basic RET-3101
+./.venv/bin/python -m function_tools_agent.main --scenario long-running \
+  "Request manual approval for RET-4420 due to source-of-funds check"
+./.venv/bin/python -m function_tools_agent.main --scenario agent-as-tool RET-3101
+./.venv/bin/python -m function_tools_agent.main --scenario celery RET-3101
+./.venv/bin/python -m function_tools_agent.main --scenario celery --show-tool-events RET-3101
+./.venv/bin/python -m function_tools_agent.main --scenario celery --show-tool-events --poll-task RET-3101
+./.venv/bin/python -m function_tools_agent.main --scenario celery --status-grace-seconds 3 RET-3101
+
+# Helper script:
+./run_function_tools.sh
+./run_function_tools.sh long-running
+./run_function_tools.sh agent-as-tool CUST-1001
+./run_function_tools.sh celery RET-3101
+```
+
+**Implementation note:** Module 09 reuses existing mock datasets from Module 07 and Module 08 so examples stay aligned with the banking domain already built in this repo.
+
+**Celery setup (optional for `celery` scenario):**
+
+```bash
+cd /Users/sathishkr/PycharmProjects/adk-masterclass
+./.venv/bin/pip install "celery[redis]"
+docker run --rm -p 6379:6379 redis:7
+./.venv/bin/celery -A function_tools_agent.function_tools:celery_app worker -Q module09_banking_tasks -l info
+```
+
+**Use existing remote Redis (IP/port):** set either a full URL or host/port fields in `.env`:
+
+```dotenv
+# Preferred
+MODULE09_CELERY_REDIS_URL=redis://:your-password@10.20.30.40:6380/0
+
+# Fallback if URL not set
+MODULE09_REDIS_HOST=10.20.30.40
+MODULE09_REDIS_PORT=6380
+MODULE09_REDIS_DB=0
+MODULE09_REDIS_PASSWORD=your-password
+```
+
+**How to get completion status:**
+- Use `--show-tool-events` to print `task_id`.
+- Use `--poll-task` to auto-check until ready.
+- Without `--poll-task`, the app can do a one-time wait + follow-up check via `--status-grace-seconds` (default `3`), which reduces immediate `PENDING` replies.
+
+**If you see** `Received unregistered task of type 'module09.recalc_deposit_score'`: restart the Celery worker so updated task registration loads.
+
+## Run MCP client (Module 10 — Redis MCP, business banking)
+
+This lesson uses ADK as an MCP client. A single agent connects to a Redis MCP server and persists customer banking memory (summary + next action) under customer-scoped Redis keys.
+
+```bash
+cd /Users/sathishkr/PycharmProjects/adk-masterclass
+
+# Configure MCP process in .env (defaults shown):
+# MODULE10_MCP_COMMAND=uvx
+# MODULE10_MCP_ARGS=--from redis-mcp-server@latest redis-mcp-server
+# MODULE10_MCP_TIMEOUT=20
+
+./.venv/bin/python -m mcp_client.main \
+  "CUST-1001: summarize profile and save summary + next action in Redis memory."
+```
+
+In the React chat UI, select **MCP Client (Redis banking)**. This agent is registered in `agents.json` with `supports_streaming: true`, so the UI runs it through `POST /api/chat/stream`.
 
 ## Run the API
 
