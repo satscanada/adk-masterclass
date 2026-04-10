@@ -117,4 +117,14 @@ export const HELP_MODULES = [
       'POST /api/chat or POST /api/chat/stream — same chat UI flow as other registered modules. Requires Redis MCP server command configured in MODULE10_MCP_COMMAND/MODULE10_MCP_ARGS.',
     supportsStreaming: true,
   },
+  {
+    module: '11',
+    title: 'MCP Server (OpenAPI explorer)',
+    agentKey: 'mcp_server',
+    pattern:
+      'FastMCP server + ADK client pair. Loads OpenAPI specs at startup, indexes operations by operationId, resolves request/response schemas, and exposes search plus mock payload tools.',
+    apiSurface:
+      'POST /api/chat or POST /api/chat/stream — local stdio by default, or remote streamable HTTP with MODULE11_MCP_TRANSPORT=streamable-http and MODULE11_MCP_HTTP_URL.',
+    supportsStreaming: true,
+  },
 ]

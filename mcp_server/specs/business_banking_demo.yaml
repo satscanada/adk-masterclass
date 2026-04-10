@@ -1,0 +1,200 @@
+openapi: 3.0.3
+info:
+  title: Business Banking Demo API
+  version: 1.0.0
+  description: Demo OpenAPI spec bundled with Module 11 for search and mock payload generation.
+servers:
+  - url: https://api.examplebank.test
+tags:
+  - name: customers
+  - name: transactions
+  - name: overdrafts
+paths:
+  /customers/{customerId}:
+    get:
+      operationId: getCustomerProfile
+      tags: [customers]
+      summary: Get a business customer profile
+      description: Returns legal entity, industry, relationship status, and address details.
+      parameters:
+        - $ref: '#/components/parameters/CustomerId'
+      responses:
+        '200':
+          description: Customer profile payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerProfile'
+  /customers/{customerId}/transactions:
+    get:
+      operationId: listCustomerTransactions
+      tags: [transactions]
+      summary: List recent customer transactions
+      description: Returns recent business banking transactions for cash-flow review.
+      parameters:
+        - $ref: '#/components/parameters/CustomerId'
+        - in: query
+          name: limit
+          description: Maximum number of transactions to return.
+          schema:
+            type: integer
+            minimum: 1
+            default: 25
+      responses:
+        '200':
+          description: Transaction list payload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  customerId:
+                    type: string
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Transaction'
+  /overdraft-reviews:
+    post:
+      operationId: createOverdraftReview
+      tags: [overdrafts]
+      summary: Create an overdraft review request
+      description: Submits a business banking overdraft review with requested limit and rationale.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OverdraftReviewRequest'
+      responses:
+        '201':
+          description: Overdraft review created
+          headers:
+            X-Review-Id:
+              description: Newly created review identifier.
+              schema:
+                type: string
+                format: uuid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OverdraftReviewResponse'
+components:
+  parameters:
+    CustomerId:
+      name: customerId
+      in: path
+      required: true
+      description: Business banking customer identifier.
+      schema:
+        type: string
+        example: CUST-1001
+  schemas:
+    Address:
+      type: object
+      required: [line1, city, country]
+      properties:
+        line1:
+          type: string
+          example: 100 King Street
+        city:
+          type: string
+          example: Calgary
+        country:
+          type: string
+          example: Canada
+        postalCode:
+          type: string
+          example: T2P1J9
+    CustomerProfile:
+      type: object
+      required: [customerId, legalName, relationshipStatus, address]
+      properties:
+        customerId:
+          type: string
+          example: CUST-1001
+        legalName:
+          type: string
+          example: Acme Corp
+        industry:
+          type: string
+          example: Manufacturing
+        relationshipStatus:
+          type: string
+          enum: [active, watchlist]
+        annualRevenue:
+          type: number
+          example: 1250000
+        address:
+          $ref: '#/components/schemas/Address'
+    Transaction:
+      type: object
+      required: [transactionId, bookedAt, amount, direction, description]
+      properties:
+        transactionId:
+          type: string
+          format: uuid
+        bookedAt:
+          type: string
+          format: date-time
+        amount:
+          type: number
+          example: 5400.5
+        direction:
+          type: string
+          enum: [credit, debit]
+        description:
+          type: string
+          example: Payroll batch
+    OverdraftReviewRequest:
+      type: object
+      required: [customerId, requestedLimit, currency, rationale]
+      properties:
+        customerId:
+          type: string
+          example: CUST-1001
+        requestedLimit:
+          type: number
+          example: 50000
+        currency:
+          type: string
+          example: CAD
+        rationale:
+          type: string
+          example: Cover seasonal supplier payments during inventory build-up.
+        supportingMetrics:
+          type: object
+          properties:
+            averageMonthlyDeposits:
+              type: number
+              example: 180000
+            projectedReceivables:
+              type: number
+              example: 95000
+    OverdraftReviewResponse:
+      type: object
+      required: [reviewId, status, decisionBreakdown]
+      properties:
+        reviewId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [submitted, under_review, approved, declined]
+        decisionBreakdown:
+          type: object
+          required: [cashFlowScore, exposureScore]
+          properties:
+            cashFlowScore:
+              type: integer
+              example: 78
+            exposureScore:
+              type: integer
+              example: 66
+            notes:
+              type: array
+              items:
+                type: string
+              example:
+                - Strong receivables coverage
+                - Moderate concentration risk

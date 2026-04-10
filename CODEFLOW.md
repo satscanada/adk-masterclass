@@ -10,7 +10,7 @@ The goal is to help you answer three questions:
 
 ## Big Picture
 
-This project now has 17 main parts:
+This project now has 18 main parts:
 
 - `simple_litellm_agent/`: the actual ADK agent code
 - `mulit_agent/`: a simple Module 02 example with two independent agents
@@ -22,6 +22,7 @@ This project now has 17 main parts:
 - `workflow_agent/`: Module 08 — workflow orchestrators for retail deposit operations (`LoopAgent`, `ParallelAgent`, and composition)
 - `function_tools_agent/`: Module 09 — function tools, long-running tool flow, and agent-as-a-tool composition
 - `mcp_client/`: Module 10 — MCP client lesson using Redis MCP server tools for business banking memory
+- `mcp_server/`: Module 11 — custom MCP server lesson that loads OpenAPI specs, searches operations, and generates mock payloads
 - `agents.json`: the list of agents shown in the UI
 - `agent_registry.py`: a small registry that lists available agents
 - `api_app.py`: the shared HTTP API for external clients
@@ -31,7 +32,7 @@ This project now has 17 main parts:
 - `run_workflow.sh`: optional CLI wrapper for Module 08 (workflow scenarios, no API or React)
 - `run_function_tools.sh`: optional CLI wrapper for Module 09 (function-tools scenarios, no API or React)
 
-There are also `tests/agent_registry_smoke_test.py`, `tests/smoke_test.py`, `tests/mulit_agent_smoke_test.py`, `tests/orchestrate_agent_smoke_test.py`, `tests/multi_agent_banking_smoke_test.py`, and `tests/api_smoke_test.py`, which check that the registry, agents, and API work correctly.
+There are also `tests/agent_registry_smoke_test.py`, `tests/smoke_test.py`, `tests/mulit_agent_smoke_test.py`, `tests/orchestrate_agent_smoke_test.py`, `tests/multi_agent_banking_smoke_test.py`, `tests/mcp_server_loader_smoke_test.py`, `tests/mcp_server_mock_payload_test.py`, and `tests/api_smoke_test.py`, which check that the registry, agents, OpenAPI tooling, and API work correctly.
 
 ## Read The Project In This Order
 
@@ -63,19 +64,26 @@ If you are a beginner, read the files in this order:
 24. `function_tools_agent/main.py`
 25. `mcp_client/agent.py`
 26. `mcp_client/main.py`
-27. `agents.json`
-28. `agent_registry.py`
-29. `api_app.py`
-30. `streamlit_app.py`
-31. `AGENT_HELP.md` (module reference; keep in sync with `ui/src/help/agentHelp.js`)
-32. `ui/src/help/agentHelp.js` and `ui/src/help/HelpOverlay.jsx`
-33. `ui/src/App.jsx`
-34. `tests/agent_registry_smoke_test.py`
-35. `tests/smoke_test.py`
-36. `tests/mulit_agent_smoke_test.py`
-37. `tests/orchestrate_agent_smoke_test.py`
-38. `tests/multi_agent_banking_smoke_test.py`
-39. `tests/api_smoke_test.py`
+27. `mcp_server/openapi_loader.py`
+28. `mcp_server/mock_payloads.py`
+29. `mcp_server/server.py`
+30. `mcp_server/agent.py`
+31. `mcp_server/main.py`
+32. `agents.json`
+33. `agent_registry.py`
+34. `api_app.py`
+35. `streamlit_app.py`
+36. `AGENT_HELP.md` (module reference; keep in sync with `ui/src/help/agentHelp.js`)
+37. `ui/src/help/agentHelp.js` and `ui/src/help/HelpOverlay.jsx`
+38. `ui/src/App.jsx`
+39. `tests/agent_registry_smoke_test.py`
+40. `tests/smoke_test.py`
+41. `tests/mulit_agent_smoke_test.py`
+42. `tests/orchestrate_agent_smoke_test.py`
+43. `tests/multi_agent_banking_smoke_test.py`
+44. `tests/mcp_server_loader_smoke_test.py`
+45. `tests/mcp_server_mock_payload_test.py`
+46. `tests/api_smoke_test.py`
 
 That order goes from simple configuration to the full app flow.
 
@@ -113,6 +121,8 @@ adk-masterclass/
 │   ├── mulit_agent_smoke_test.py
 │   ├── orchestrate_agent_smoke_test.py
 │   ├── multi_agent_banking_smoke_test.py
+│   ├── mcp_server_loader_smoke_test.py
+│   ├── mcp_server_mock_payload_test.py
 │   └── agent_registry_smoke_test.py
 ├── mulit_agent/
 │   ├── __init__.py
@@ -155,6 +165,16 @@ adk-masterclass/
 │   ├── agent.py
 │   ├── main.py
 │   └── README.md
+├── mcp_server/
+│   ├── __init__.py
+│   ├── agent.py
+│   ├── main.py
+│   ├── mock_payloads.py
+│   ├── openapi_loader.py
+│   ├── server.py
+│   ├── README.md
+│   └── specs/
+│       └── business_banking_demo.yaml
 └── simple_litellm_agent/
     ├── __init__.py
     ├── config.py
@@ -173,6 +193,8 @@ Lists Python packages this project needs:
 - `python-dotenv`: loads environment variables from `.env`
 - `streamlit`: web UI
 - `celery[redis]`: optional Module 09 async task queue demo (Redis broker/backend)
+- `mcp`: Model Context Protocol SDK used by Modules 10 and 11
+- `PyYAML`: YAML parser for OpenAPI spec loading in Module 11
 
 ### `simple_litellm_agent/config.py`
 
@@ -507,6 +529,70 @@ It:
 
 Think of this file as: "MCP client lesson runner that is UI-ready."
 
+### `mcp_server/openapi_loader.py`
+
+This file loads and normalizes Module 11 OpenAPI specs.
+
+It:
+
+- scans a configured folder for `.json`, `.yaml`, and `.yml` files
+- parses OpenAPI documents and walks `paths`
+- resolves internal `$ref` pointers
+- builds an operation-centric index keyed by `operationId` (with a synthetic fallback when missing)
+
+Think of this file as: "startup OpenAPI parser + searchable operation index."
+
+### `mcp_server/mock_payloads.py`
+
+This file generates deterministic examples from resolved schemas.
+
+It:
+
+- prefers `example`, `default`, `enum`, and `const` values when present
+- handles nested objects, arrays, and primitive types
+- builds mock request and response payloads for Module 11 tools
+
+Think of this file as: "schema-to-example payload generator."
+
+### `mcp_server/server.py`
+
+This file builds the Module 11 MCP server.
+
+It:
+
+- creates a `FastMCP` server
+- loads the OpenAPI index at startup
+- exposes tools for spec listing, operation search, full operation details, and mock generation
+- runs over `stdio` or `streamable-http`
+
+Think of this file as: "custom MCP server over your OpenAPI artifacts."
+
+### `mcp_server/agent.py`
+
+This file builds the Module 11 MCP client agent.
+
+It:
+
+- creates one `LlmAgent` for API integration assistance
+- attaches `McpToolset` with either `StdioConnectionParams` or `StreamableHTTPConnectionParams`
+- defaults to spawning the local `mcp_server.server` module over stdio
+- can point to a remote streamable HTTP MCP server via env vars
+
+Think of this file as: "ADK client for your own MCP server."
+
+### `mcp_server/main.py`
+
+This file runs Module 11 with both blocking and streaming paths.
+
+It:
+
+- caches a `Runner` for the process
+- exposes `run_prompt(...)` for `POST /api/chat` and CLI
+- exposes async `stream_prompt(...)` for `POST /api/chat/stream`
+- raises actionable setup errors when Module 11 MCP transport configuration is invalid
+
+Think of this file as: "OpenAPI MCP lesson runner that is UI-ready."
+
 ### `agents.json`
 
 This file stores the list of agents for the app.
@@ -738,6 +824,32 @@ It:
 - verifies invalid customer IDs return clear error messages
 
 Think of this file as: "prove the multi-agent banking pipeline works end to end."
+
+### `tests/mcp_server_loader_smoke_test.py`
+
+This file is a smoke test for the Module 11 OpenAPI loader.
+
+It:
+
+- creates a temporary OpenAPI spec on disk
+- verifies `$ref` resolution for parameters and schemas
+- checks operation search behavior
+- confirms the synthetic `operationId` fallback for operations that do not define one
+
+Think of this file as: "prove Module 11 can build a searchable startup index from specs."
+
+### `tests/mcp_server_mock_payload_test.py`
+
+This file is a smoke test for the Module 11 mock payload generator.
+
+It:
+
+- loads the bundled demo spec from `mcp_server/specs/`
+- builds a mock request for `createOverdraftReview`
+- builds mock responses for nested object schemas and headers
+- verifies example values survive through the resolved schema path
+
+Think of this file as: "prove Module 11 can turn OpenAPI schemas into useful example payloads."
 
 ### `tests/api_smoke_test.py`
 
@@ -1085,6 +1197,33 @@ Short version:
 
 ```text
 terminal or chat UI -> mcp_client/main.py -> LlmAgent + McpToolset -> Redis MCP server -> Redis-backed memory response
+```
+
+### Flow 14: Run the Module 11 MCP server lesson
+
+Command:
+
+```bash
+./.venv/bin/python -m mcp_server.main \
+  "Find the overdraft review operation and generate a mock request."
+```
+
+What happens:
+
+1. Python starts `mcp_server/main.py`.
+2. `build_runner()` creates a `Runner` for one `LlmAgent` from `mcp_server/agent.py`.
+3. The agent builds `McpToolset(...)` using either:
+   - `StdioConnectionParams` (default: spawn `python -m mcp_server.server --transport stdio`)
+   - `StreamableHTTPConnectionParams` (remote mode: connect to `MODULE11_MCP_HTTP_URL`)
+4. The Module 11 MCP server starts, loads OpenAPI specs from `MODULE11_SPECS_DIR` (or `mcp_server/specs/` by default), resolves refs, and builds an operation index at startup.
+5. During the run, ADK discovers Module 11 MCP tools such as `search_operations`, `get_operation_details`, `generate_mock_request`, and `generate_mock_response`.
+6. The agent uses those tools to search by business language, inspect schemas, and answer with the relevant method/path plus example payloads.
+7. The same module supports `run_prompt(...)` (blocking) and `stream_prompt(...)` (NDJSON streaming in the React UI).
+
+Short version:
+
+```text
+terminal or chat UI -> mcp_server/main.py -> LlmAgent + McpToolset -> Module 11 MCP server -> OpenAPI index + mock payload tools -> API integration response
 ```
 
 ## The Core Relationship Between Files

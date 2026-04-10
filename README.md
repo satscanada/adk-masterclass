@@ -4,7 +4,7 @@ This project shows a small but useful **Google Agent Development Kit (ADK)** lea
 
 It now includes:
 
-- the Python agent modules (including Module 06: a `BaseAgent` keyword router in `custom_agent/`, Module 07: a multi-agent business banking pipeline in `multi_agent_banking/`, Module 08: workflow orchestration patterns in `workflow_agent/`, Module 09: function-tool patterns in `function_tools_agent/`, and Module 10: MCP client + Redis banking memory in `mcp_client/`)
+- the Python agent modules (including Module 06: a `BaseAgent` keyword router in `custom_agent/`, Module 07: a multi-agent business banking pipeline in `multi_agent_banking/`, Module 08: workflow orchestration patterns in `workflow_agent/`, Module 09: function-tool patterns in `function_tools_agent/`, Module 10: MCP client + Redis banking memory in `mcp_client/`, and Module 11: a custom OpenAPI-backed MCP server in `mcp_server/`)
 - a FastAPI layer that exposes those agents over HTTP
 - the original Streamlit UI
 - a React + Vite + Tailwind chat UI that talks to the API
@@ -56,6 +56,8 @@ adk-masterclass/
 │   ├── mulit_agent_smoke_test.py
 │   ├── orchestrate_agent_smoke_test.py
 │   ├── multi_agent_banking_smoke_test.py
+│   ├── mcp_server_loader_smoke_test.py
+│   ├── mcp_server_mock_payload_test.py
 │   └── agent_registry_smoke_test.py
 ├── ui/
 │   ├── package.json
@@ -106,6 +108,16 @@ adk-masterclass/
 │   ├── agent.py
 │   ├── main.py
 │   └── README.md
+├── mcp_server/
+│   ├── __init__.py
+│   ├── agent.py
+│   ├── main.py
+│   ├── mock_payloads.py
+│   ├── openapi_loader.py
+│   ├── server.py
+│   ├── README.md
+│   └── specs/
+│       └── business_banking_demo.yaml
 └── simple_litellm_agent/
     ├── __init__.py
     ├── agent.py
@@ -218,6 +230,21 @@ Keep **`AGENT_HELP.md`** and **`agentHelp.js`** aligned whenever you add or rena
 
 - `mcp_client/main.py`
   - Module 10: blocking `run_prompt(...)` and async `stream_prompt(...)`, so this MCP lesson is stitched into the same API + React chat flow as the streaming modules.
+
+- `mcp_server/server.py`
+  - Module 11: FastMCP server that loads OpenAPI specs from a folder during startup, exposes search/detail/mock tools, and can run over `stdio` or `streamable-http`.
+
+- `mcp_server/openapi_loader.py`
+  - Module 11: parses `.json` / `.yaml` / `.yml` OpenAPI files, resolves internal `$ref` pointers, and builds an operation-centric in-memory index keyed by `operationId`.
+
+- `mcp_server/mock_payloads.py`
+  - Module 11: deterministic schema-to-example generator used for mock request and response payloads.
+
+- `mcp_server/agent.py`
+  - Module 11: ADK `LlmAgent` with `McpToolset` that connects to the local stdio server by default, or to a remote streamable HTTP MCP server when configured by env vars.
+
+- `mcp_server/main.py`
+  - Module 11: blocking `run_prompt(...)` and async `stream_prompt(...)`, so the custom MCP server lesson is stitched into the same API + React chat flow as Modules 04, 05, 06, 07, and 10.
 
 - `agents.json`
   - Stores the agent list for the UI
@@ -570,6 +597,44 @@ cd /Users/sathishkr/PycharmProjects/adk-masterclass
 
 In the React chat UI, select **MCP Client (Redis banking)**. This agent is registered in `agents.json` with `supports_streaming: true`, so the UI runs it through `POST /api/chat/stream`.
 
+## Run MCP server (Module 11 — OpenAPI explorer)
+
+This lesson builds your own MCP server. The server loads OpenAPI specs from a configured folder, indexes operations by `operationId`, and exposes tools for search, schema inspection, and mock request/response generation.
+
+```bash
+cd /Users/sathishkr/PycharmProjects/adk-masterclass
+
+# Default path: stdio-backed Module 11 agent (the agent spawns the MCP server itself)
+./.venv/bin/python -m mcp_server.main \
+  "Find the customer profile operation and generate a mock response."
+```
+
+Optional direct server runs:
+
+```bash
+cd /Users/sathishkr/PycharmProjects/adk-masterclass
+
+# Local stdio server
+./.venv/bin/python -m mcp_server.server --transport stdio --print-config
+
+# Remote streamable HTTP server
+./.venv/bin/python -m mcp_server.server \
+  --transport streamable-http \
+  --host 127.0.0.1 \
+  --port 8765 \
+  --http-path /mcp
+```
+
+Useful env vars:
+
+- `MODULE11_SPECS_DIR` — folder scanned at startup for `.json`, `.yaml`, and `.yml` OpenAPI specs
+- `MODULE11_MCP_TRANSPORT=stdio|streamable-http` — how the ADK agent connects to the server
+- `MODULE11_MCP_HTTP_URL` — remote streamable HTTP URL when transport is `streamable-http`
+
+If `MODULE11_SPECS_DIR` is empty, Module 11 uses the bundled demo spec in `mcp_server/specs/`.
+
+In the React chat UI, select **MCP Server (OpenAPI explorer)**. This agent is also registered in `agents.json` with `supports_streaming: true`, so the same chat UI can drive the custom MCP server lesson over `POST /api/chat/stream`.
+
 ## Run the API
 
 This is the shared backend layer for browser clients and any other HTTP-based consumer.
@@ -735,6 +800,24 @@ This test uses a fake local server and verifies the Module 07 multi-agent bankin
 ```bash
 cd /Users/sathishkr/PycharmProjects/adk-masterclass
 ./.venv/bin/python tests/multi_agent_banking_smoke_test.py
+```
+
+## Run the Module 11 OpenAPI loader smoke test
+
+This test creates a temporary OpenAPI spec, verifies `$ref` resolution, checks operation search, and confirms the synthetic `operationId` fallback works when a spec omits one.
+
+```bash
+cd /Users/sathishkr/PycharmProjects/adk-masterclass
+./.venv/bin/python tests/mcp_server_loader_smoke_test.py
+```
+
+## Run the Module 11 mock payload test
+
+This test uses the bundled demo spec in `mcp_server/specs/` and verifies that mock request and response payloads are generated from resolved schemas.
+
+```bash
+cd /Users/sathishkr/PycharmProjects/adk-masterclass
+./.venv/bin/python tests/mcp_server_mock_payload_test.py
 ```
 
 ## Run the registry smoke test

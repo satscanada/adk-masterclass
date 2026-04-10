@@ -68,6 +68,18 @@
         {"label": "CUST-1001 — save banking summary", "prompt": "CUST-1001: summarize profile and save to Redis memory."},
         {"label": "CUST-2002 — risk coaching plan", "prompt": "CUST-2002: retrieve memory (if any), then save a coaching next action."}
       ]
+    },
+    {
+      "key": "mcp_server",
+      "title": "MCP Server (OpenAPI explorer)",
+      "description": "Module 11: OpenAPI-backed MCP server that indexes operations by operationId, returns resolved schemas, and generates mock request/response payloads.",
+      "prompt_hint": "Try: Find the customer profile operation, show its schema, then generate a mock request and response.",
+      "module": "mcp_server.main",
+      "supports_streaming": true,
+      "suggestions": [
+        {"label": "Find customer profile API", "prompt": "Search for the customer profile operation and summarize method, path, and operationId."},
+        {"label": "Mock overdraft review payloads", "prompt": "Find the overdraft review operation and generate a mock request and response."}
+      ]
     }
   ]
 }

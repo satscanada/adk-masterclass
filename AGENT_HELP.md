@@ -21,6 +21,7 @@ This file is the **markdown companion** to the in-app Help panel in the React UI
 | 06 Custom Agent | `custom_agent` | `BaseAgent` keyword router to tech vs general `LlmAgent` children; delegation via `run_async` (no LLM for routing). | `POST /api/chat` or `POST /api/chat/stream` |
 | 07 Business Banking | `multi_agent_banking` | `SequentialAgent` pipeline: deposit → bill → decision; mock tools; `demo_expected_decision`; streaming audit trail in UI; optional CLI script. | `POST /api/chat` or `POST /api/chat/stream` |
 | 10 MCP Client (Redis banking) | `mcp_client` | Single `LlmAgent` + `McpToolset` (Redis MCP server). Persists and reads customer-scoped business banking memory keys in Redis. | `POST /api/chat` or `POST /api/chat/stream` |
+| 11 MCP Server (OpenAPI explorer) | `mcp_server` | Custom MCP server + ADK client pair. Loads OpenAPI specs at startup, searches operations, returns resolved request/response schemas, and generates mock payloads. | `POST /api/chat` or `POST /api/chat/stream` |
 
 ### Module 01 — Single Agent
 
@@ -78,10 +79,21 @@ This file is the **markdown companion** to the in-app Help panel in the React UI
 - **Entry:** `mcp_client.main:run_prompt` (blocking) and `mcp_client.main:stream_prompt` (NDJSON streaming)
 - **Pattern:** One `LlmAgent` with `McpToolset` and `StdioConnectionParams`; the toolset launches a Redis MCP server process and proxies its tools into ADK tool calls.
 - **Business use case:** Customer-scoped Redis memory for business banking advisory:
-  - `banking:customer:{CUSTOMER_ID}:summary`
-  - `banking:customer:{CUSTOMER_ID}:next_action`
+  - `banking:customer:<id>:summary` (infer `<id>` from the user message, e.g. CUST-1001; avoid `{...}` in agent instructions — ADK treats those as context variables)
+  - `banking:customer:<id>:next_action`
 - **Environment:** Configure MCP process with `MODULE10_MCP_COMMAND`, `MODULE10_MCP_ARGS`, and optional `MODULE10_MCP_TIMEOUT`.
 - **React UI:** Registered in `agents.json` with `supports_streaming: true`, so the same chat UI can run this MCP lesson via `POST /api/chat/stream`.
+
+### Module 11 — MCP Server (OpenAPI explorer)
+
+- **Python package:** `mcp_server/`
+- **Entry:** `mcp_server.main:run_prompt` (blocking) and `mcp_server.main:stream_prompt` (NDJSON streaming)
+- **Pattern:** A FastMCP server loads OpenAPI specs from a folder during startup, builds an operation-centric in-memory index, and exposes agent-friendly tools for search, full operation inspection, and mock request/response generation.
+- **Server tools:** `list_specs`, `list_tags`, `summarize_api_surface`, `search_operations`, `get_operation_details`, `generate_mock_request`, `generate_mock_response`.
+- **OpenAPI model:** Operations are keyed by `operationId` when present, with a stable synthetic fallback for specs that omit it. Internal `$ref` pointers are resolved so the returned request and response schemas are ready for agent use.
+- **Transport:** The ADK agent supports both `stdio` and `streamable-http` through `MODULE11_MCP_TRANSPORT`. Local development defaults to `stdio`; remote deployments can point to `MODULE11_MCP_HTTP_URL`.
+- **Specs folder:** The server reads `MODULE11_SPECS_DIR` at startup. If it is empty, Module 11 falls back to the bundled demo spec in `mcp_server/specs/`.
+- **React UI:** Registered in `agents.json` with `supports_streaming: true`, so the chat UI can use the same `POST /api/chat/stream` flow as Modules 04, 05, 06, 07, and 10.
 
 ## Adding a new agent or module
 
