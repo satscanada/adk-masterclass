@@ -2020,7 +2020,7 @@ agent = LlmAgent(
         </div>
       </div>
 
-      <p>Modules 02–03 and 07–08 showed <strong>multi-agent patterns inside one process</strong> — orchestrators, pipelines, and workflow agents sharing memory through ADK. Modules 10–11 added <strong>MCP</strong>, a standard way for an agent to call <em>tools and context servers</em>. <strong>Agent-to-Agent (A2A)</strong> is the next interoperability layer: a standard way for one agent (or product) to <strong>delegate work to another agent over the network</strong> — often across teams, vendors, or runtimes — without sharing one monolithic codebase.</p>
+      <p>Modules 02–03 and 07–08 showed <strong>multi-agent patterns inside one process</strong> — orchestrators, pipelines, and workflow agents sharing memory through ADK. Modules 10–11 added <strong>MCP</strong>, a standard way for an agent to call <em>tools and context servers</em>. <strong>Agent-to-Agent (A2A)</strong> is the next interoperability layer: a standard way for one agent (or product) to <strong>delegate work to another agent over the network</strong>. A practical banking scenario is <strong>CD laddering</strong>: a customer-facing savings agent can hand off ladder design and maturity handling to a remote fixed-income specialist agent that knows how to structure staggered CD terms, preserve periodic liquidity, and decide whether each rung should be rolled into a new long-term CD or returned as cash.</p>
 
       <div class="compare-grid">
         <div class="compare-card">
@@ -2035,7 +2035,7 @@ agent = LlmAgent(
           <h4>A2A (this module)</h4>
           <ul>
             <li>Agent connects to <strong>another agent as a peer</strong></li>
-            <li>Great for specialist fleets, human-in-the-loop handoffs, cross-org workflows</li>
+            <li>Great for specialist fleets, cross-bank servicing, and remote fixed-income / CD-ladder handoffs</li>
             <li>Thinks in tasks, status, artifacts, and streaming collaboration</li>
           </ul>
         </div>
@@ -2045,34 +2045,47 @@ agent = LlmAgent(
         <table class="data-table" style="margin:0;">
           <thead><tr><th>Concept</th><th>Role</th></tr></thead>
           <tbody>
-            <tr><td><strong>Agent Card</strong></td><td>Machine-readable discovery document (capabilities, skills, auth, endpoints) so a client agent can choose <em>which</em> remote agent to invoke.</td></tr>
-            <tr><td><strong>Task / message flow</strong></td><td>Structured exchange: submit a goal or payload, receive progress updates, stream partial results, then a final artifact or terminal state.</td></tr>
-            <tr><td><strong>Trust boundary</strong></td><td>Each agent is its own security and policy domain — credentials, rate limits, and data handling stay at the server agent.</td></tr>
+            <tr><td><strong>Agent Card</strong></td><td>Machine-readable discovery document (capabilities, supported ladder types, maturity cadences, grace-period behavior, auth, endpoints) so the client agent can choose the right remote CD-ladder specialist.</td></tr>
+            <tr><td><strong>Task / message flow</strong></td><td>Structured exchange: submit savings amount, target horizon, liquidity needs, and rollover preference; receive progress updates; then return a ladder plan with staggered maturities, APY comparisons, and rollover guidance.</td></tr>
+            <tr><td><strong>Trust boundary</strong></td><td>Each agent is its own security and policy domain — useful when the remote institution owns rate-shopping logic across banks, brokered-CD inventory, or reinvestment workflows that should stay on its side.</td></tr>
           </tbody>
         </table>
       </div>
 
-      <p><strong>How this fits ADK:</strong> You can implement A2A today by exposing or consuming HTTP endpoints (and optional streaming) from a tool, a custom <span class="ic">BaseAgent</span>, or a thin gateway service. The lesson goal is <em>protocol literacy</em>: design your local agent so delegation, timeouts, and fallbacks are explicit — the same discipline you already use for MCP subprocesses and Redis-backed tools.</p>
+      <p><strong>How this fits ADK:</strong> Your local banking assistant can gather customer goals, emergency-fund constraints, available cash, and desired access frequency, then call a remote A2A specialist that builds the actual CD ladder. That remote agent can reason about common ladder patterns such as <span class="ic">1/2/3/4/5-year</span> rungs, shorter mini-ladders, periodic maturity access, APY shopping across institutions, and whether the next rung should be reinvested or left in cash. The lesson goal is <em>protocol literacy</em>: design delegation, timeouts, retries, approvals, and fallbacks explicitly — the same discipline you already use for MCP subprocesses and Redis-backed tools.</p>
 
       <div class="code-wrapper">
         <div class="code-header">
-          <div class="code-filename">Mental model — client agent delegates to remote specialist</div>
+          <div class="code-filename">CD ladder A2A flow — delegate ladder construction to a specialist agent</div>
           <span class="code-lang">PSEUDOCODE</span>
         </div>
-        <pre><code># 1) Discover: fetch Agent Card from https://specialist.example/.well-known/agent.json
-# 2) Negotiate: create task with goal + input artifacts + callback/stream preference
-# 3) Collaborate: consume streamed updates until terminal state (completed / failed / needs_input)
-# 4) Integrate: map remote result into your session.state or next pipeline step
+        <pre><code># 1) Discover a fixed-income specialist via its Agent Card
+# 2) Submit a CD-ladder planning task with savings amount, horizon, liquidity needs, and rollover preference
+# 3) Stream progress while the remote agent evaluates staggered maturities
+# 4) Return a ladder plan, bank/APY choices, and a maturity-action schedule to the local banking assistant
 
-async def handle_user_request(user_text: str) -&gt; str:
-    if requires_external_specialist(user_text):
-        remote = await a2a_client.create_task(
-            agent_url=SPECIALIST_A2A_URL,
-            goal=user_text,
-            context=build_minimal_context(),  # least privilege
-        )
-        return await a2a_client.wait_for_final_artifact(remote)
-    return await local_llm_agent.run(user_text)</code></pre>
+async def build_cd_ladder(customer_id: str) -&gt; dict:
+    profile = get_saver_profile(customer_id)
+    goals = get_savings_goal(customer_id)
+
+    remote_task = await a2a_client.create_task(
+        agent_url=FIXED_INCOME_A2A_URL,
+        goal="Create a CD ladder plan for this customer",
+        context={
+            "customer_id": customer_id,
+            "available_cash": profile["available_cash"],
+            "time_horizon_years": goals["time_horizon_years"],
+            "needs_periodic_liquidity": goals["needs_periodic_liquidity"],
+            "auto_roll_preference": goals["auto_roll_preference"],
+            "preferred_structure": "1y-2y-3y-4y-5y ladder",
+        },
+    )
+
+    ladder_plan = await a2a_client.wait_for_final_artifact(remote_task)
+    return {
+        "recommendation": ladder_plan,
+        "next_action": "review first maturity 30 days before rollover",
+    }</code></pre>
       </div>
 
       <div class="callout tip">
@@ -2087,7 +2100,7 @@ async def handle_user_request(user_text: str) -&gt; str:
         <div class="callout-icon">💡</div>
         <div class="callout-body">
           <strong>Production checklist</strong>
-          Version the Agent Card, cap payload sizes, add circuit breakers when the remote agent is slow, and log correlation IDs across both sides. Treat A2A like any external dependency: mock it in tests and observe it in traces.
+          For CD laddering, send only the minimum planning inputs, version the Agent Card, record why a rung is rolled over versus returned as cash, and make maturity reminders explicit so the local agent can review rates before grace periods or auto-renewal windows close. If the remote specialist is unavailable, fall back to a simpler rule-based ladder recommendation or a human banker review.
         </div>
       </div>
     </div>

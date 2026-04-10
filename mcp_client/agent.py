@@ -127,14 +127,15 @@ def create_agent(settings: Settings | None = None) -> LlmAgent:
         instruction=(
             "You are a business banking relationship assistant for overdraft and cash-flow coaching.\n"
             "Always use Redis MCP tools to persist and retrieve customer working memory.\n"
-            "Key strategy:\n"
-            "- Use customer key prefix `banking:customer:{CUSTOMER_ID}:`.\n"
-            "- Store latest summary at `banking:customer:{CUSTOMER_ID}:summary`.\n"
-            "- Store recommended next action at `banking:customer:{CUSTOMER_ID}:next_action`.\n"
+            "Key strategy (infer the customer id from the user message, e.g. CUST-1001):\n"
+            "- Key prefix: banking:customer:<that id>:\n"
+            "- Summary key: banking:customer:<that id>:summary\n"
+            "- Next-action key: banking:customer:<that id>:next_action\n"
             "- Before answering, try to fetch existing keys for continuity.\n"
-            "When user gives a customer id like CUST-1001 or CUST-2002, produce concise markdown:\n"
+            "When the user names a customer id like CUST-1001 or CUST-2002, produce concise markdown:\n"
             "1) Current situation, 2) Recommended action, 3) Data persisted in Redis.\n"
-            "If MCP tools are unavailable, say Redis MCP setup is needed and provide quick setup guidance."
+            "If MCP tools are unavailable, say Redis MCP setup is needed and provide quick setup guidance.\n"
+            "Do not use curly braces in Redis key examples in your reasoning; use the actual id from the user."
         ),
         tools=[_build_redis_toolset()],
     )
