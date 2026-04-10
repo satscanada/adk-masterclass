@@ -606,23 +606,24 @@
   <a class="nav-item" href="#function-tools"><span class="nav-num">09</span> Function Tools</a>
   <a class="nav-item" href="#mcp-tools"><span class="nav-num">10</span> MCP Tools (Client)</a>
   <a class="nav-item" href="#build-mcp"><span class="nav-num">11</span> Build MCP Server</a>
+  <a class="nav-item" href="#agent-to-agent"><span class="nav-num">12</span> Agent-to-Agent (A2A)</a>
 
   <div class="nav-section">Sessions</div>
-  <a class="nav-item" href="#session-memory"><span class="nav-num">12</span> In-Memory Sessions</a>
-  <a class="nav-item" href="#session-db"><span class="nav-num">13</span> DB Persistence</a>
+  <a class="nav-item" href="#session-memory"><span class="nav-num">13</span> In-Memory Sessions</a>
+  <a class="nav-item" href="#session-db"><span class="nav-num">14</span> DB Persistence</a>
 
   <div class="nav-section">Layer 3 · Adaptive Intelligence</div>
-  <a class="nav-item" href="#feedback-loops"><span class="nav-num">14</span> Feedback Loops</a>
-  <a class="nav-item" href="#outcome-tracking"><span class="nav-num">15</span> Outcome Tracking</a>
-  <a class="nav-item" href="#persistent-memory"><span class="nav-num">16</span> Persistent Behavioral Memory</a>
-  <a class="nav-item" href="#mcp-intelligence"><span class="nav-num">17</span> MCP for Intelligence</a>
-  <a class="nav-item" href="#adaptive-prompting"><span class="nav-num">18</span> Adaptive Prompting</a>
-  <a class="nav-item" href="#llm-judge"><span class="nav-num">19</span> LLM as Judge vs Guardrails</a>
-  <a class="nav-item" href="#decision-optimization"><span class="nav-num">20</span> Decision Optimization Loop</a>
-  <a class="nav-item" href="#explore-exploit"><span class="nav-num">21</span> Exploration vs Exploitation</a>
-  <a class="nav-item" href="#memory-architectures"><span class="nav-num">22</span> Agent Memory Architectures</a>
-  <a class="nav-item" href="#multi-agent-learning"><span class="nav-num">23</span> Multi-Agent Learning</a>
-  <a class="nav-item" href="#production-patterns"><span class="nav-num">24</span> Production Patterns</a>
+  <a class="nav-item" href="#feedback-loops"><span class="nav-num">15</span> Feedback Loops</a>
+  <a class="nav-item" href="#outcome-tracking"><span class="nav-num">16</span> Outcome Tracking</a>
+  <a class="nav-item" href="#persistent-memory"><span class="nav-num">17</span> Persistent Behavioral Memory</a>
+  <a class="nav-item" href="#mcp-intelligence"><span class="nav-num">18</span> MCP for Intelligence</a>
+  <a class="nav-item" href="#adaptive-prompting"><span class="nav-num">19</span> Adaptive Prompting</a>
+  <a class="nav-item" href="#llm-judge"><span class="nav-num">20</span> LLM as Judge vs Guardrails</a>
+  <a class="nav-item" href="#decision-optimization"><span class="nav-num">21</span> Decision Optimization Loop</a>
+  <a class="nav-item" href="#explore-exploit"><span class="nav-num">22</span> Exploration vs Exploitation</a>
+  <a class="nav-item" href="#memory-architectures"><span class="nav-num">23</span> Agent Memory Architectures</a>
+  <a class="nav-item" href="#multi-agent-learning"><span class="nav-num">24</span> Multi-Agent Learning</a>
+  <a class="nav-item" href="#production-patterns"><span class="nav-num">25</span> Production Patterns</a>
 
   <div class="nav-section">Model</div>
   <a class="nav-item" href="#litellm-ref"><span class="nav-num">↳</span> LiteLLM Reference</a>
@@ -635,7 +636,7 @@
   <div class="hero">
     <div class="hero-eyebrow">Lead AI Educator Series · Google ADK for Python</div>
     <h1>Build AI Agents with<br><span class="highlight">ADK Python + LiteLLM</span></h1>
-    <p class="hero-desc">A comprehensive, hands-on masterclass covering every ADK agent type — from a single-agent hello world to multi-agent hierarchies, streaming, custom BaseAgent subclasses, workflow orchestrators, MCP toolsets, building your own MCP server, and full session persistence. <strong>All LLM access exclusively through LiteLLM.</strong></p>
+    <p class="hero-desc">A comprehensive, hands-on masterclass covering every ADK agent type — from a single-agent hello world to multi-agent hierarchies, streaming, custom BaseAgent subclasses, workflow orchestrators, MCP toolsets, building your own MCP server, agent-to-agent (A2A) interoperability, and full session persistence. <strong>All LLM access exclusively through LiteLLM.</strong></p>
     <div class="hero-tags">
       <span class="tag">Python 3.10+</span>
       <span class="tag">asyncio</span>
@@ -711,7 +712,7 @@
             <div class="step-num">3</div>
             <div class="step-body">
               <strong>Install core packages</strong>
-              <p><span class="ic">pip install google-adk litellm python-dotenv aiosqlite</span> — aiosqlite is only needed for Module 13 (DB persistence).</p>
+              <p><span class="ic">pip install google-adk litellm python-dotenv aiosqlite</span> — aiosqlite is only needed for Module 14 (DB persistence).</p>
             </div>
           </div>
           <div class="step">
@@ -742,14 +743,14 @@
 ├── .env.example            <span class="cm"># template — commit this</span>
 ├── adk_masterclass.py      <span class="cm"># all 13 modules in one file</span>
 ├── mcp_server/             <span class="cm"># Module 11 package: server, loader, mocks, demo specs</span>
-├── sessions.db             <span class="cm"># auto-created by Module 13 (SQLite)</span>
+├── sessions.db             <span class="cm"># auto-created by Module 14 (SQLite)</span>
 └── requirements.txt        <span class="cm"># pinned deps</span>
 
 <span class="cm"># requirements.txt</span>
 google-adk
 litellm
 python-dotenv
-aiosqlite          <span class="cm"># Module 13: SQLite session persistence</span>
+aiosqlite          <span class="cm"># Module 14: SQLite session persistence</span>
 mcp                <span class="cm"># Modules 10–11: MCP tool integration</span>
 PyYAML             <span class="cm"># Module 11: YAML OpenAPI spec loading</span></code></pre>
       </div>
@@ -2010,9 +2011,92 @@ agent = LlmAgent(
 
 
     <!-- ══════════════════════════════ MODULE 12 ══ -->
-    <div id="session-memory" class="module">
+    <div id="agent-to-agent" class="module">
       <div class="module-header">
         <span class="module-num">MODULE 12</span>
+        <div>
+          <h2>Agent-to-Agent (A2A) Protocol</h2>
+          <div class="module-meta">remote delegation · agent discovery · tasks &amp; messages · complements MCP</div>
+        </div>
+      </div>
+
+      <p>Modules 02–03 and 07–08 showed <strong>multi-agent patterns inside one process</strong> — orchestrators, pipelines, and workflow agents sharing memory through ADK. Modules 10–11 added <strong>MCP</strong>, a standard way for an agent to call <em>tools and context servers</em>. <strong>Agent-to-Agent (A2A)</strong> is the next interoperability layer: a standard way for one agent (or product) to <strong>delegate work to another agent over the network</strong> — often across teams, vendors, or runtimes — without sharing one monolithic codebase.</p>
+
+      <div class="compare-grid">
+        <div class="compare-card">
+          <h4>MCP (Modules 10–11)</h4>
+          <ul>
+            <li>Model connects to <strong>tool / resource servers</strong></li>
+            <li>Great for APIs, DBs, retrieval, “bring your own tools”</li>
+            <li>Thinks in tools, prompts, and context chunks</li>
+          </ul>
+        </div>
+        <div class="compare-card">
+          <h4>A2A (this module)</h4>
+          <ul>
+            <li>Agent connects to <strong>another agent as a peer</strong></li>
+            <li>Great for specialist fleets, human-in-the-loop handoffs, cross-org workflows</li>
+            <li>Thinks in tasks, status, artifacts, and streaming collaboration</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="concept" data-label="Core ideas">
+        <table class="data-table" style="margin:0;">
+          <thead><tr><th>Concept</th><th>Role</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Agent Card</strong></td><td>Machine-readable discovery document (capabilities, skills, auth, endpoints) so a client agent can choose <em>which</em> remote agent to invoke.</td></tr>
+            <tr><td><strong>Task / message flow</strong></td><td>Structured exchange: submit a goal or payload, receive progress updates, stream partial results, then a final artifact or terminal state.</td></tr>
+            <tr><td><strong>Trust boundary</strong></td><td>Each agent is its own security and policy domain — credentials, rate limits, and data handling stay at the server agent.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p><strong>How this fits ADK:</strong> You can implement A2A today by exposing or consuming HTTP endpoints (and optional streaming) from a tool, a custom <span class="ic">BaseAgent</span>, or a thin gateway service. The lesson goal is <em>protocol literacy</em>: design your local agent so delegation, timeouts, and fallbacks are explicit — the same discipline you already use for MCP subprocesses and Redis-backed tools.</p>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">Mental model — client agent delegates to remote specialist</div>
+          <span class="code-lang">PSEUDOCODE</span>
+        </div>
+        <pre><code># 1) Discover: fetch Agent Card from https://specialist.example/.well-known/agent.json
+# 2) Negotiate: create task with goal + input artifacts + callback/stream preference
+# 3) Collaborate: consume streamed updates until terminal state (completed / failed / needs_input)
+# 4) Integrate: map remote result into your session.state or next pipeline step
+
+async def handle_user_request(user_text: str) -&gt; str:
+    if requires_external_specialist(user_text):
+        remote = await a2a_client.create_task(
+            agent_url=SPECIALIST_A2A_URL,
+            goal=user_text,
+            context=build_minimal_context(),  # least privilege
+        )
+        return await a2a_client.wait_for_final_artifact(remote)
+    return await local_llm_agent.run(user_text)</code></pre>
+      </div>
+
+      <div class="callout tip">
+        <div class="callout-icon">🎓</div>
+        <div class="callout-body">
+          <strong>Teaching order</strong>
+          Place A2A <em>after</em> MCP so learners clearly separate “standard tools” from “standard agent peers.” Place it <em>before</em> deep session persistence so the next modules (13–14) focus on <strong>state</strong> while this module focuses on <strong>cross-agent wire protocol</strong>.
+        </div>
+      </div>
+
+      <div class="callout info">
+        <div class="callout-icon">💡</div>
+        <div class="callout-body">
+          <strong>Production checklist</strong>
+          Version the Agent Card, cap payload sizes, add circuit breakers when the remote agent is slow, and log correlation IDs across both sides. Treat A2A like any external dependency: mock it in tests and observe it in traces.
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════ MODULE 13 ══ -->
+    <div id="session-memory" class="module">
+      <div class="module-header">
+        <span class="module-num">MODULE 13</span>
         <div>
           <h2>Session Management — In-Memory</h2>
           <div class="module-meta">InMemorySessionService · session.state · multi-turn · ephemeral</div>
@@ -2023,7 +2107,7 @@ agent = LlmAgent(
 
       <div class="code-wrapper">
         <div class="code-header">
-          <div class="code-filename">module_12_in_memory_session.py</div>
+          <div class="code-filename">module_13_in_memory_session.py</div>
           <span class="code-lang">PYTHON</span>
         </div>
         <pre><code><span class="kw">from</span> google.adk.sessions <span class="kw">import</span> <span class="cl">InMemorySessionService</span>
@@ -2074,10 +2158,10 @@ refreshed = <span class="kw">await</span> session_service.<span class="fn">get_s
     </div>
 
 
-    <!-- ══════════════════════════════ MODULE 13 ══ -->
+    <!-- ══════════════════════════════ MODULE 14 ══ -->
     <div id="session-db" class="module">
       <div class="module-header">
-        <span class="module-num">MODULE 13</span>
+        <span class="module-num">MODULE 14</span>
         <div>
           <h2>Session Management — Database Persistence</h2>
           <div class="module-meta">DatabaseSessionService · SQLite · PostgreSQL · sessions survive restarts</div>
@@ -2088,7 +2172,7 @@ refreshed = <span class="kw">await</span> session_service.<span class="fn">get_s
 
       <div class="code-wrapper">
         <div class="code-header">
-          <div class="code-filename">module_13_db_session.py</div>
+          <div class="code-filename">module_14_db_session.py</div>
           <span class="code-lang">PYTHON</span>
         </div>
         <pre><code><span class="kw">from</span> google.adk.sessions <span class="kw">import</span> <span class="cl">DatabaseSessionService</span>
@@ -2294,8 +2378,9 @@ model = <span class="cl">LiteLlm</span>(model=<span class="st">"openai/smart-mod
           <tr><td>09</td><td>Function Tools</td><td><span class="ic">banking_tools</span> / <span class="ic">workflow_tools</span> + ToolContext</td><td>Structured dict returns + optional session writes</td></tr>
           <tr><td>10</td><td>MCP Client</td><td>McpToolset</td><td>Use external MCP tool servers</td></tr>
           <tr><td>11</td><td>MCP Server</td><td>mcp.server + list_tools/call_tool</td><td>Expose your own tools via MCP</td></tr>
-          <tr><td>12</td><td>In-Memory Session</td><td>InMemorySessionService</td><td>Dev, testing, stateless tasks</td></tr>
-          <tr><td>13</td><td>DB Session</td><td>DatabaseSessionService</td><td>Production, persistent history</td></tr>
+          <tr><td>12</td><td>Agent-to-Agent (A2A)</td><td>Agent Card · tasks · streaming</td><td>Delegate work to remote specialist agents</td></tr>
+          <tr><td>13</td><td>In-Memory Session</td><td>InMemorySessionService</td><td>Dev, testing, stateless tasks</td></tr>
+          <tr><td>14</td><td>DB Session</td><td>DatabaseSessionService</td><td>Production, persistent history</td></tr>
         </tbody>
       </table>
 
@@ -2327,10 +2412,10 @@ model = <span class="cl">LiteLlm</span>(model=<span class="st">"openai/smart-mod
       </div>
     </div>
 
-    <!-- ══════════════════════════════ MODULE 14 ══ -->
+    <!-- ══════════════════════════════ MODULE 15 ══ -->
     <div id="feedback-loops" class="module">
       <div class="module-header">
-        <span class="module-num">MODULE 14</span>
+        <span class="module-num">MODULE 15</span>
         <div>
           <h2>Feedback Loops in Agent Systems</h2>
           <div class="module-meta">observe · score · store · adjust · repeat</div>
@@ -2375,7 +2460,7 @@ model = <span class="cl">LiteLlm</span>(model=<span class="st">"openai/smart-mod
           <h4>Explicit (captured)</h4>
           <ul>
             <li>User thumbs-up / thumbs-down</li>
-            <li>Supervisor agent scores output (Module 19)</li>
+            <li>Supervisor agent scores output (Module 20)</li>
             <li>Business metric crossed (transfer succeeded)</li>
             <li>Human-in-the-loop review result</li>
           </ul>
@@ -2448,10 +2533,10 @@ avg = store.avg_score(<span class="st">"overdraft_agent"</span>, <span class="st
       </div>
     </div>
 
-    <!-- ══════════════════════════════ MODULE 15 ══ -->
+    <!-- ══════════════════════════════ MODULE 16 ══ -->
     <div id="outcome-tracking" class="module">
       <div class="module-header">
-        <span class="module-num">MODULE 15</span>
+        <span class="module-num">MODULE 16</span>
         <div>
           <h2>Outcome Tracking &amp; Evaluation Layer</h2>
           <div class="module-meta">ground truth · correctness scoring · eval harness · regression</div>
@@ -2528,19 +2613,19 @@ asyncio.run(main())</code></pre>
       </div>
     </div>
 
-    <!-- ══════════════════════════════ MODULE 16 ══ -->
+    <!-- ══════════════════════════════ MODULE 17 ══ -->
     <div id="persistent-memory" class="module">
       <div class="module-header">
-        <span class="module-num">MODULE 16</span>
+        <span class="module-num">MODULE 17</span>
         <div>
           <h2>Persistent Behavioral Memory</h2>
           <div class="module-meta">user intelligence · long-term memory · semantic search · pgvector</div>
         </div>
       </div>
-      <p>Session memory (Modules 12–13) keeps state within a conversation. <strong>Persistent behavioral memory keeps state across all time</strong> — building a model of each user's preferences, habits, and patterns that outlives any single session.</p>
+      <p>Session memory (Modules 13–14) keeps state within a conversation. <strong>Persistent behavioral memory keeps state across all time</strong> — building a model of each user's preferences, habits, and patterns that outlives any single session.</p>
       <div class="compare-grid">
         <div class="compare-card">
-          <h4>Session Memory (M12–13)</h4>
+          <h4>Session Memory (M13–14)</h4>
           <ul>
             <li>Lives for one conversation</li>
             <li>Key-value state dict</li>
@@ -2616,10 +2701,10 @@ asyncio.run(main())</code></pre>
       </div>
     </div>
 
-    <!-- ══════════════════════════════ MODULE 17 ══ -->
+    <!-- ══════════════════════════════ MODULE 18 ══ -->
     <div id="mcp-intelligence" class="module">
       <div class="module-header">
-        <span class="module-num">MODULE 17</span>
+        <span class="module-num">MODULE 18</span>
         <div>
           <h2>MCP for Intelligence (Not Just Data)</h2>
           <div class="module-meta">smart tools · enriched responses · intelligence provider pattern</div>
@@ -2686,10 +2771,10 @@ app = <span class="cl">Server</span>(<span class="st">"intelligence-provider"</s
       </div>
     </div>
 
-    <!-- ══════════════════════════════ MODULE 18 ══ -->
+    <!-- ══════════════════════════════ MODULE 19 ══ -->
     <div id="adaptive-prompting" class="module">
       <div class="module-header">
-        <span class="module-num">MODULE 18</span>
+        <span class="module-num">MODULE 19</span>
         <div>
           <h2>Adaptive Prompting (Dynamic Context Injection)</h2>
           <div class="module-meta">per-user system prompts · context builders · personalization pipeline</div>
@@ -2708,7 +2793,7 @@ app = <span class="cl">Server</span>(<span class="st">"intelligence-provider"</s
           <div class="arch-box red">LiteLlm Agent</div>
         </div>
         <div style="font-size:11px; color:var(--text-dim); margin-top:12px;">
-          Context Builder pulls from: Behavioral Memory (M16) · MCP Intelligence (M17) · Feedback History (M14)
+          Context Builder pulls from: Behavioral Memory (M17) · MCP Intelligence (M18) · Feedback History (M15)
         </div>
       </div>
       <div class="code-wrapper">
@@ -2767,10 +2852,10 @@ Always confirm reasoning before acting. Never modify balances directly."""</span
       </div>
     </div>
 
-    <!-- ══════════════════════════════ MODULE 19 ══ -->
+    <!-- ══════════════════════════════ MODULE 20 ══ -->
     <div id="llm-judge" class="module">
       <div class="module-header">
-        <span class="module-num">MODULE 19</span>
+        <span class="module-num">MODULE 20</span>
         <div>
           <h2>LLM as Judge vs Guardrails</h2>
           <div class="module-meta">evaluation · scoring · rule-based guards · two-layer safety</div>
@@ -2851,16 +2936,16 @@ Set "flag" to explanation if any score &lt; 0.7."""</span>
       </div>
     </div>
 
-    <!-- ══════════════════════════════ MODULE 20 ══ -->
+    <!-- ══════════════════════════════ MODULE 21 ══ -->
     <div id="decision-optimization" class="module">
       <div class="module-header">
-        <span class="module-num">MODULE 20</span>
+        <span class="module-num">MODULE 21</span>
         <div>
           <h2>Decision Optimization Loop</h2>
           <div class="module-meta">reward signal · parameter tuning · threshold optimization · closed-loop</div>
         </div>
       </div>
-      <p>The optimization loop takes feedback scores from Module 14, passes them through an evaluator (Modules 15/19), and uses the aggregate signal to <strong>tune decision parameters automatically over time</strong>. This is where your system starts improving without human intervention.</p>
+      <p>The optimization loop takes feedback scores from Module 15, passes them through an evaluator (Modules 16/20), and uses the aggregate signal to <strong>tune decision parameters automatically over time</strong>. This is where your system starts improving without human intervention.</p>
       <div class="arch-diagram">
         <strong style="color:var(--text); display:block; margin-bottom:16px;">Closed-Loop Optimization</strong>
         <div class="arch-row">
@@ -2929,10 +3014,10 @@ Set "flag" to explanation if any score &lt; 0.7."""</span>
       </div>
     </div>
 
-    <!-- ══════════════════════════════ MODULE 21 ══ -->
+    <!-- ══════════════════════════════ MODULE 22 ══ -->
     <div id="explore-exploit" class="module">
       <div class="module-header">
-        <span class="module-num">MODULE 21</span>
+        <span class="module-num">MODULE 22</span>
         <div>
           <h2>Exploration vs Exploitation</h2>
           <div class="module-meta">epsilon-greedy · UCB · multi-armed bandit · AI decision theory</div>
@@ -3001,10 +3086,10 @@ Set "flag" to explanation if any score &lt; 0.7."""</span>
       </div>
     </div>
 
-    <!-- ══════════════════════════════ MODULE 22 ══ -->
+    <!-- ══════════════════════════════ MODULE 23 ══ -->
     <div id="memory-architectures" class="module">
       <div class="module-header">
-        <span class="module-num">MODULE 22</span>
+        <span class="module-num">MODULE 23</span>
         <div>
           <h2>Agent Memory Architectures</h2>
           <div class="module-meta">in-context · episodic · semantic · procedural · working · external</div>
@@ -3017,11 +3102,11 @@ Set "flag" to explanation if any score &lt; 0.7."""</span>
         </thead>
         <tbody>
           <tr><td><strong>In-Context</strong></td><td>Current conversation turns</td><td>ADK session state dict</td><td>Single session</td></tr>
-          <tr><td><strong>Episodic</strong></td><td>Past events / interaction history</td><td>DatabaseSessionService (M13)</td><td>Per-user, persistent</td></tr>
-          <tr><td><strong>Semantic</strong></td><td>Facts, patterns, behavioral data</td><td>pgvector + embeddings (M16)</td><td>Per-user, long-term</td></tr>
+          <tr><td><strong>Episodic</strong></td><td>Past events / interaction history</td><td>DatabaseSessionService (M14)</td><td>Per-user, persistent</td></tr>
+          <tr><td><strong>Semantic</strong></td><td>Facts, patterns, behavioral data</td><td>pgvector + embeddings (M17)</td><td>Per-user, long-term</td></tr>
           <tr><td><strong>Procedural</strong></td><td>How to do things (skills, workflows)</td><td>Agent instructions + tool defs</td><td>System-wide</td></tr>
           <tr><td><strong>Working</strong></td><td>Current task scratchpad</td><td>ADK <span class="ic">output_key</span> in session state</td><td>Current task only</td></tr>
-          <tr><td><strong>External</strong></td><td>Live data (prices, balances)</td><td>MCP tools (M10/M17)</td><td>Real-time</td></tr>
+          <tr><td><strong>External</strong></td><td>Live data (prices, balances)</td><td>MCP tools (M10/M18)</td><td>Real-time</td></tr>
         </tbody>
       </table>
       <div class="code-wrapper">
@@ -3071,10 +3156,10 @@ Set "flag" to explanation if any score &lt; 0.7."""</span>
       </div>
     </div>
 
-    <!-- ══════════════════════════════ MODULE 23 ══ -->
+    <!-- ══════════════════════════════ MODULE 24 ══ -->
     <div id="multi-agent-learning" class="module">
       <div class="module-header">
-        <span class="module-num">MODULE 23</span>
+        <span class="module-num">MODULE 24</span>
         <div>
           <h2>Multi-Agent Learning Systems</h2>
           <div class="module-meta">shared intelligence · collective feedback · knowledge propagation</div>
@@ -3141,10 +3226,10 @@ MODEL = <span class="st">"anthropic/claude-sonnet-4-5"</span>
       </div>
     </div>
 
-    <!-- ══════════════════════════════ MODULE 24 ══ -->
+    <!-- ══════════════════════════════ MODULE 25 ══ -->
     <div id="production-patterns" class="module">
       <div class="module-header">
-        <span class="module-num">MODULE 24</span>
+        <span class="module-num">MODULE 25</span>
         <div>
           <h2>Production Patterns for Agent Systems</h2>
           <div class="module-meta">observability · graceful degradation · circuit breakers · deployment</div>
@@ -3225,13 +3310,13 @@ MODEL = <span class="st">"anthropic/claude-sonnet-4-5"</span>
         <div class="callout-icon">🏭</div>
         <div class="callout-body">
           <strong>Deployment Runbook — Layer 3 additions</strong>
-          (1) Start with feedback capture only — no tuning; (2) Run optimizer in dry-run mode for 2 weeks before applying changes; (3) Gate exploration (M21) behind a feature flag; (4) Shadow-mode new models before replacing old ones; (5) Maintain a killswitch that routes all decisions to the deterministic fallback. Your risk function is always callable independently of the agent layer.
+          (1) Start with feedback capture only — no tuning; (2) Run optimizer in dry-run mode for 2 weeks before applying changes; (3) Gate exploration (M22) behind a feature flag; (4) Shadow-mode new models before replacing old ones; (5) Maintain a killswitch that routes all decisions to the deterministic fallback. Your risk function is always callable independently of the agent layer.
         </div>
       </div>
 
       <div class="divider" style="margin-top:40px;">
         <div class="divider-line"></div>
-        <div class="divider-text">Layer 3 Complete · Modules 14–24</div>
+        <div class="divider-text">Layer 3 Complete · Modules 15–25</div>
         <div class="divider-line"></div>
       </div>
 
@@ -3243,18 +3328,19 @@ MODEL = <span class="st">"anthropic/claude-sonnet-4-5"</span>
         <tbody>
           <tr><td>00–08</td><td>Layer 1 · Agents</td><td>Basic → Multi-Agent → Workflow</td><td>ADK agent types &amp; orchestration</td></tr>
           <tr><td>09–11</td><td>Layer 1 · Tools</td><td>Function Tools → MCP</td><td>Custom tool integration</td></tr>
-          <tr><td>12–13</td><td>Layer 2 · Memory</td><td>In-memory → DB Persistence</td><td>Session state management</td></tr>
-          <tr><td>14</td><td>Layer 3</td><td>Feedback Loops</td><td>observe → score → store → adjust</td></tr>
-          <tr><td>15</td><td>Layer 3</td><td>Outcome Tracking</td><td>Correctness, timeliness, efficiency evals</td></tr>
-          <tr><td>16</td><td>Layer 3</td><td>Persistent Behavioral Memory</td><td>pgvector semantic user model</td></tr>
-          <tr><td>17</td><td>Layer 3</td><td>MCP as Intelligence Provider</td><td>Pre-computed scores over raw data</td></tr>
-          <tr><td>18</td><td>Layer 3</td><td>Adaptive Prompting</td><td>Dynamic context injection per user</td></tr>
-          <tr><td>19</td><td>Layer 3</td><td>LLM-as-Judge + Guardrails</td><td>Two-layer output evaluation</td></tr>
-          <tr><td>20</td><td>Layer 3</td><td>Decision Optimization Loop</td><td>Automated threshold tuning via feedback</td></tr>
-          <tr><td>21</td><td>Layer 3</td><td>Exploration vs Exploitation</td><td>Epsilon-greedy / UCB bandit selection</td></tr>
-          <tr><td>22</td><td>Layer 3</td><td>Memory Architectures</td><td>In-context / episodic / semantic / procedural</td></tr>
-          <tr><td>23</td><td>Layer 3</td><td>Multi-Agent Learning</td><td>Shared intelligence hub across agents</td></tr>
-          <tr><td>24</td><td>Layer 3</td><td>Production Patterns</td><td>Circuit breakers, observability, fallbacks</td></tr>
+          <tr><td>12</td><td>Layer 1 · Interop</td><td>Agent-to-Agent (A2A)</td><td>Remote agent delegation &amp; task flow</td></tr>
+          <tr><td>13–14</td><td>Layer 2 · Memory</td><td>In-memory → DB Persistence</td><td>Session state management</td></tr>
+          <tr><td>15</td><td>Layer 3</td><td>Feedback Loops</td><td>observe → score → store → adjust</td></tr>
+          <tr><td>16</td><td>Layer 3</td><td>Outcome Tracking</td><td>Correctness, timeliness, efficiency evals</td></tr>
+          <tr><td>17</td><td>Layer 3</td><td>Persistent Behavioral Memory</td><td>pgvector semantic user model</td></tr>
+          <tr><td>18</td><td>Layer 3</td><td>MCP as Intelligence Provider</td><td>Pre-computed scores over raw data</td></tr>
+          <tr><td>19</td><td>Layer 3</td><td>Adaptive Prompting</td><td>Dynamic context injection per user</td></tr>
+          <tr><td>20</td><td>Layer 3</td><td>LLM-as-Judge + Guardrails</td><td>Two-layer output evaluation</td></tr>
+          <tr><td>21</td><td>Layer 3</td><td>Decision Optimization Loop</td><td>Automated threshold tuning via feedback</td></tr>
+          <tr><td>22</td><td>Layer 3</td><td>Exploration vs Exploitation</td><td>Epsilon-greedy / UCB bandit selection</td></tr>
+          <tr><td>23</td><td>Layer 3</td><td>Memory Architectures</td><td>In-context / episodic / semantic / procedural</td></tr>
+          <tr><td>24</td><td>Layer 3</td><td>Multi-Agent Learning</td><td>Shared intelligence hub across agents</td></tr>
+          <tr><td>25</td><td>Layer 3</td><td>Production Patterns</td><td>Circuit breakers, observability, fallbacks</td></tr>
         </tbody>
       </table>
     </div>
