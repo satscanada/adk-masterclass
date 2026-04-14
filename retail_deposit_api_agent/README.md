@@ -10,6 +10,7 @@ This folder contains a standalone multi-step sequential ADK agent and its own Fa
   - `deposit_decision_agent` (strict JSON output)
 - `main.py` — direct runner (`run_prompt`) used by CLI/API
 - `api_app.py` — standalone FastAPI app for this module only
+- `run_retail_deposit_api_server.sh` — start script for the standalone API
 - `run_retail_deposit_api.sh` — curl helper for the standalone API
 
 ## Run standalone API
@@ -18,6 +19,12 @@ From repo root:
 
 ```bash
 ./.venv/bin/python -m uvicorn retail_deposit_api_agent.api_app:app --host 127.0.0.1 --port 8626 --reload
+```
+
+Or use the helper script:
+
+```bash
+./retail_deposit_api_agent/run_retail_deposit_api_server.sh
 ```
 
 Endpoints:
