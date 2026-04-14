@@ -12,11 +12,27 @@ echo "  CUSTOMER_ID: ${CUSTOMER_ID}"
 echo "  USER_ID:     ${USER_ID}"
 echo
 
-curl -sS "${API_BASE}/chat" \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"prompt\": \"${CUSTOMER_ID}\",
-    \"user_id\": \"${USER_ID}\"
-  }"
+response="$(
+  curl -sS "${API_BASE}/chat" \
+    -H "Content-Type: application/json" \
+    -d "{
+      \"prompt\": \"${CUSTOMER_ID}\",
+      \"user_id\": \"${USER_ID}\"
+    }"
+)"
+
+if command -v jq >/dev/null 2>&1; then
+  if echo "${response}" | jq -e . >/dev/null 2>&1; then
+    echo "${response}" | jq .
+  else
+    printf '%s\n' "${response}"
+  fi
+else
+  if echo "${response}" | python3 -m json.tool >/dev/null 2>&1; then
+    echo "${response}" | python3 -m json.tool
+  else
+    printf '%s\n' "${response}"
+  fi
+fi
 
 echo
