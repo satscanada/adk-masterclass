@@ -80,6 +80,17 @@
         {"label": "Find customer profile API", "prompt": "Search for the customer profile operation and summarize method, path, and operationId."},
         {"label": "Mock overdraft review payloads", "prompt": "Find the overdraft review operation and generate a mock request and response."}
       ]
+    },
+    {
+      "key": "retail_deposit_api_agent",
+      "title": "Retail Deposit API Agent (sequential)",
+      "description": "Module 26: Sequential retail deposit workflow with intake, risk, and decision stages that returns strict JSON output for API consumption.",
+      "prompt_hint": "Send a customer ID like RET-3101 or RET-4420. The final response is JSON.",
+      "module": "retail_deposit_api_agent.main",
+      "suggestions": [
+        {"label": "Healthy customer (expected APPROVED)", "prompt": "RET-3101"},
+        {"label": "Higher-risk customer (expected REVIEW_REQUIRED)", "prompt": "RET-4420"}
+      ]
     }
   ]
 }

@@ -624,6 +624,7 @@
   <a class="nav-item" href="#memory-architectures"><span class="nav-num">23</span> Agent Memory Architectures</a>
   <a class="nav-item" href="#multi-agent-learning"><span class="nav-num">24</span> Multi-Agent Learning</a>
   <a class="nav-item" href="#production-patterns"><span class="nav-num">25</span> Production Patterns</a>
+  <a class="nav-item" href="#sequential-api-workflow"><span class="nav-num">26</span> Sequential API Workflow</a>
 
   <div class="nav-section">Model</div>
   <a class="nav-item" href="#litellm-ref"><span class="nav-num">↳</span> LiteLLM Reference</a>
@@ -3327,9 +3328,82 @@ MODEL = <span class="st">"anthropic/claude-sonnet-4-5"</span>
         </div>
       </div>
 
+      <!-- ══════════════════════════════ MODULE 26 ══ -->
+      <div id="sequential-api-workflow" class="module" style="margin-top:40px;">
+        <div class="module-header">
+          <span class="module-num">MODULE 26</span>
+          <div>
+            <h2>Sequential Retail Deposit Agent as API</h2>
+            <div class="module-meta">SequentialAgent · intake → risk → decision · strict JSON contract</div>
+          </div>
+        </div>
+        <p>This module turns a multi-step workflow into an API-consumable decision service. A <span class="ic">SequentialAgent</span> runs three specialists in order — intake, risk, and final decision — then returns <strong>machine-parseable JSON</strong> suitable for downstream systems.</p>
+        <div class="arch-diagram">
+          <strong style="color:var(--text); display:block; margin-bottom:16px;">Module 26 Pipeline</strong>
+          <div class="arch-row">
+            <div class="arch-box accent">deposit_intake_agent<br><span style="font-size:10px">profile + deposits</span></div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-box yellow">deposit_risk_agent<br><span style="font-size:10px">AML + velocity</span></div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-box green">deposit_decision_agent<br><span style="font-size:10px">JSON decision payload</span></div>
+          </div>
+        </div>
+        <div class="code-wrapper">
+          <div class="code-header">
+            <div class="code-filename">retail_deposit_api_agent/agent.py — sequential agent</div>
+            <span class="code-lang">PYTHON</span>
+          </div>
+          <pre><code><span class="kw">from</span> google.adk.agents <span class="kw">import</span> LlmAgent, SequentialAgent
+<span class="kw">from</span> workflow_agent.workflow_tools <span class="kw">import</span> (
+    get_deposit_profile, get_recent_deposits,
+    run_aml_screening, run_velocity_check, get_deposit_offer_request,
+)
+
+intake_agent = <span class="cl">LlmAgent</span>(
+    name=<span class="st">"deposit_intake_agent"</span>,
+    tools=[get_deposit_profile, get_recent_deposits],
+    output_key=<span class="st">"deposit_intake_summary"</span>,
+)
+risk_agent = <span class="cl">LlmAgent</span>(
+    name=<span class="st">"deposit_risk_agent"</span>,
+    tools=[run_aml_screening, run_velocity_check],
+    output_key=<span class="st">"deposit_risk_summary"</span>,
+)
+decision_agent = <span class="cl">LlmAgent</span>(
+    name=<span class="st">"deposit_decision_agent"</span>,
+    tools=[get_deposit_offer_request],
+    output_key=<span class="st">"deposit_workflow_json"</span>,
+    instruction=<span class="st">"Return ONLY valid JSON."</span>,
+)
+
+root_agent = <span class="cl">SequentialAgent</span>(
+    name=<span class="st">"retail_deposit_workflow_sequential"</span>,
+    sub_agents=[intake_agent, risk_agent, decision_agent],
+)</code></pre>
+        </div>
+        <div class="code-wrapper">
+          <div class="code-header">
+            <div class="code-filename">retail_deposit_api_agent/run_retail_deposit_api.sh — standalone curl invocation</div>
+            <span class="code-lang">SHELL</span>
+          </div>
+          <pre><code><span class="cm"># Start API first:</span>
+<span class="cm"># ./.venv/bin/python -m uvicorn retail_deposit_api_agent.api_app:app --host 127.0.0.1 --port 8626 --reload</span>
+
+./retail_deposit_api_agent/run_retail_deposit_api.sh RET-3101
+
+<span class="cm"># Equivalent raw request:</span>
+curl -sS http://127.0.0.1:8626/chat \
+  -H <span class="st">"Content-Type: application/json"</span> \
+  -d <span class="st">'{
+    "prompt": "RET-3101",
+    "user_id": "curl-user"
+  }'</span></code></pre>
+        </div>
+      </div>
+
       <div class="divider" style="margin-top:40px;">
         <div class="divider-line"></div>
-        <div class="divider-text">Layer 3 Complete · Modules 15–25</div>
+        <div class="divider-text">Layer 3 Complete · Modules 15–26</div>
         <div class="divider-line"></div>
       </div>
 
@@ -3354,6 +3428,7 @@ MODEL = <span class="st">"anthropic/claude-sonnet-4-5"</span>
           <tr><td>23</td><td>Layer 3</td><td>Memory Architectures</td><td>In-context / episodic / semantic / procedural</td></tr>
           <tr><td>24</td><td>Layer 3</td><td>Multi-Agent Learning</td><td>Shared intelligence hub across agents</td></tr>
           <tr><td>25</td><td>Layer 3</td><td>Production Patterns</td><td>Circuit breakers, observability, fallbacks</td></tr>
+          <tr><td>26</td><td>Layer 3</td><td>Sequential API Workflow</td><td>Multi-step retail deposit decisioning with strict JSON output</td></tr>
         </tbody>
       </table>
     </div>

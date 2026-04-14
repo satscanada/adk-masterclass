@@ -10,7 +10,7 @@ The goal is to help you answer three questions:
 
 ## Big Picture
 
-This project now has 18 main parts:
+This project now has 20 main parts:
 
 - `simple_litellm_agent/`: the actual ADK agent code
 - `mulit_agent/`: a simple Module 02 example with two independent agents
@@ -23,6 +23,7 @@ This project now has 18 main parts:
 - `function_tools_agent/`: Module 09 — function tools, long-running tool flow, and agent-as-a-tool composition
 - `mcp_client/`: Module 10 — MCP client lesson using Redis MCP server tools for business banking memory
 - `mcp_server/`: Module 11 — custom MCP server lesson that loads OpenAPI specs, searches operations, and generates mock payloads
+- `retail_deposit_api_agent/`: Module 26 — sequential retail deposit workflow (intake → risk → decision) returning JSON for API clients
 - `agents.json`: the list of agents shown in the UI
 - `agent_registry.py`: a small registry that lists available agents
 - `api_app.py`: the shared HTTP API for external clients
@@ -31,6 +32,7 @@ This project now has 18 main parts:
 - `run_banking.sh`: optional CLI wrapper for Module 07 (approve / deny / both customers, no API or React)
 - `run_workflow.sh`: optional CLI wrapper for Module 08 (workflow scenarios, no API or React)
 - `run_function_tools.sh`: optional CLI wrapper for Module 09 (function-tools scenarios, no API or React)
+- `retail_deposit_api_agent/run_retail_deposit_api.sh`: optional curl wrapper for Module 26 standalone API (`POST /chat`)
 
 There are also `tests/agent_registry_smoke_test.py`, `tests/smoke_test.py`, `tests/mulit_agent_smoke_test.py`, `tests/orchestrate_agent_smoke_test.py`, `tests/multi_agent_banking_smoke_test.py`, `tests/mcp_server_loader_smoke_test.py`, `tests/mcp_server_mock_payload_test.py`, and `tests/api_smoke_test.py`, which check that the registry, agents, OpenAPI tooling, and API work correctly.
 
@@ -76,14 +78,17 @@ If you are a beginner, read the files in this order:
 36. `AGENT_HELP.md` (module reference; keep in sync with `ui/src/help/agentHelp.js`)
 37. `ui/src/help/agentHelp.js` and `ui/src/help/HelpOverlay.jsx`
 38. `ui/src/App.jsx`
-39. `tests/agent_registry_smoke_test.py`
-40. `tests/smoke_test.py`
-41. `tests/mulit_agent_smoke_test.py`
-42. `tests/orchestrate_agent_smoke_test.py`
-43. `tests/multi_agent_banking_smoke_test.py`
-44. `tests/mcp_server_loader_smoke_test.py`
-45. `tests/mcp_server_mock_payload_test.py`
-46. `tests/api_smoke_test.py`
+39. `retail_deposit_api_agent/agent.py`
+40. `retail_deposit_api_agent/main.py`
+41. `retail_deposit_api_agent/run_retail_deposit_api.sh`
+42. `tests/agent_registry_smoke_test.py`
+43. `tests/smoke_test.py`
+44. `tests/mulit_agent_smoke_test.py`
+45. `tests/orchestrate_agent_smoke_test.py`
+46. `tests/multi_agent_banking_smoke_test.py`
+47. `tests/mcp_server_loader_smoke_test.py`
+48. `tests/mcp_server_mock_payload_test.py`
+49. `tests/api_smoke_test.py`
 
 That order goes from simple configuration to the full app flow.
 
@@ -175,6 +180,13 @@ adk-masterclass/
 │   ├── README.md
 │   └── specs/
 │       └── business_banking_demo.yaml
+├── retail_deposit_api_agent/
+│   ├── __init__.py
+│   ├── agent.py
+│   ├── api_app.py
+│   ├── README.md
+│   ├── run_retail_deposit_api.sh
+│   └── main.py
 └── simple_litellm_agent/
     ├── __init__.py
     ├── config.py
@@ -593,6 +605,32 @@ It:
 
 Think of this file as: "OpenAPI MCP lesson runner that is UI-ready."
 
+### `retail_deposit_api_agent/agent.py`
+
+This file builds the Module 26 `SequentialAgent` API workflow.
+
+It:
+
+- creates `deposit_intake_agent` (profile + recent deposit tools)
+- creates `deposit_risk_agent` (AML + velocity tools)
+- creates `deposit_decision_agent` (offer lookup + strict JSON contract output)
+- chains all three in one `SequentialAgent`
+
+Think of this file as: "multi-step retail deposit pipeline that ends in JSON."
+
+### `retail_deposit_api_agent/main.py`
+
+This file runs Module 26 with a blocking API-friendly contract.
+
+It:
+
+- caches one `Runner` per process
+- exposes `run_prompt(...)` for `POST /api/chat` and CLI use
+- extracts and validates a final JSON object from the model output
+- returns normalized pretty JSON text for reliable client parsing
+
+Think of this file as: "JSON-first runner for the sequential retail workflow."
+
 ### `agents.json`
 
 This file stores the list of agents for the app.
@@ -681,6 +719,29 @@ It:
 - runs `python -m function_tools_agent.main` with chosen scenario
 
 Think of this file as: "single command entrypoint for Module 09 demos."
+
+### `retail_deposit_api_agent/api_app.py`
+
+This file exposes Module 26 as a standalone FastAPI service.
+
+It:
+
+- adds `GET /health`
+- adds `POST /chat` for customer-ID prompts
+- calls local `run_prompt(...)` directly (no registry dependency)
+
+Think of this file as: "module-scoped API app for independent runs."
+
+### `retail_deposit_api_agent/run_retail_deposit_api.sh`
+
+This script calls Module 26 standalone API directly.
+
+It:
+
+- sends `POST /chat` using `curl`
+- accepts customer ID as the first argument (`RET-3101` default)
+
+Think of this file as: "quick API contract check for Module 26."
 
 ### `runstreamlit.sh`
 
