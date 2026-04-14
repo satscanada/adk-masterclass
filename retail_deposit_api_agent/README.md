@@ -41,6 +41,8 @@ From repo root:
 ./retail_deposit_api_agent/run_retail_deposit_api.sh RET-4420
 ```
 
+The script prints `agent_key`, `session_id`, and then pretty-prints the nested JSON inside `response` (when it is JSON text).
+
 ## Raw curl example
 
 ```bash
