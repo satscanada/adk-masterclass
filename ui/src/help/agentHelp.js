@@ -127,4 +127,14 @@ export const HELP_MODULES = [
       'POST /api/chat or POST /api/chat/stream — local stdio by default, or remote streamable HTTP with MODULE11_MCP_TRANSPORT=streamable-http and MODULE11_MCP_HTTP_URL.',
     supportsStreaming: true,
   },
+  {
+    module: '12',
+    title: 'A2A CD Ladder Agent',
+    agentKey: 'a2a_agent',
+    pattern:
+      'Local banking assistant delegates CD ladder planning to a remote fixed-income peer via Agent Card discovery and A2A task polling; falls back to a local mini-ladder when remote peer is unavailable.',
+    apiSurface:
+      'POST /api/chat through shared registry, or standalone Module 12 API at /chat. Specialist peer exposes /.well-known/agent-card and /a2a/tasks endpoints.',
+    supportsStreaming: false,
+  },
 ]

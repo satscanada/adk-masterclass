@@ -10,7 +10,7 @@ The goal is to help you answer three questions:
 
 ## Big Picture
 
-This project now has 20 main parts:
+This project now has 22 main parts:
 
 - `simple_litellm_agent/`: the actual ADK agent code
 - `mulit_agent/`: a simple Module 02 example with two independent agents
@@ -23,6 +23,7 @@ This project now has 20 main parts:
 - `function_tools_agent/`: Module 09 — function tools, long-running tool flow, and agent-as-a-tool composition
 - `mcp_client/`: Module 10 — MCP client lesson using Redis MCP server tools for business banking memory
 - `mcp_server/`: Module 11 — custom MCP server lesson that loads OpenAPI specs, searches operations, and generates mock payloads
+- `a2a_agent/`: Module 12 — local banking assistant that delegates CD ladder planning to a remote fixed-income specialist via Agent Card + A2A tasks
 - `retail_deposit_api_agent/`: Module 26 — sequential retail deposit workflow (intake → risk → decision) returning JSON for API clients
 - `agents.json`: the list of agents shown in the UI
 - `agent_registry.py`: a small registry that lists available agents
@@ -32,6 +33,7 @@ This project now has 20 main parts:
 - `run_banking.sh`: optional CLI wrapper for Module 07 (approve / deny / both customers, no API or React)
 - `run_workflow.sh`: optional CLI wrapper for Module 08 (workflow scenarios, no API or React)
 - `run_function_tools.sh`: optional CLI wrapper for Module 09 (function-tools scenarios, no API or React)
+- `a2a_agent/run_a2a_api.sh`: optional curl wrapper for Module 12 standalone API (`POST /chat`)
 - `retail_deposit_api_agent/run_retail_deposit_api.sh`: optional curl wrapper for Module 26 standalone API (`POST /chat`)
 
 There are also `tests/agent_registry_smoke_test.py`, `tests/smoke_test.py`, `tests/mulit_agent_smoke_test.py`, `tests/orchestrate_agent_smoke_test.py`, `tests/multi_agent_banking_smoke_test.py`, `tests/mcp_server_loader_smoke_test.py`, `tests/mcp_server_mock_payload_test.py`, and `tests/api_smoke_test.py`, which check that the registry, agents, OpenAPI tooling, and API work correctly.
@@ -78,17 +80,21 @@ If you are a beginner, read the files in this order:
 36. `AGENT_HELP.md` (module reference; keep in sync with `ui/src/help/agentHelp.js`)
 37. `ui/src/help/agentHelp.js` and `ui/src/help/HelpOverlay.jsx`
 38. `ui/src/App.jsx`
-39. `retail_deposit_api_agent/agent.py`
-40. `retail_deposit_api_agent/main.py`
-41. `retail_deposit_api_agent/run_retail_deposit_api.sh`
-42. `tests/agent_registry_smoke_test.py`
-43. `tests/smoke_test.py`
-44. `tests/mulit_agent_smoke_test.py`
-45. `tests/orchestrate_agent_smoke_test.py`
-46. `tests/multi_agent_banking_smoke_test.py`
-47. `tests/mcp_server_loader_smoke_test.py`
-48. `tests/mcp_server_mock_payload_test.py`
-49. `tests/api_smoke_test.py`
+39. `a2a_agent/a2a_protocol.py`
+40. `a2a_agent/specialist_api.py`
+41. `a2a_agent/main.py`
+42. `a2a_agent/run_a2a_api.sh`
+43. `retail_deposit_api_agent/agent.py`
+44. `retail_deposit_api_agent/main.py`
+45. `retail_deposit_api_agent/run_retail_deposit_api.sh`
+46. `tests/agent_registry_smoke_test.py`
+47. `tests/smoke_test.py`
+48. `tests/mulit_agent_smoke_test.py`
+49. `tests/orchestrate_agent_smoke_test.py`
+50. `tests/multi_agent_banking_smoke_test.py`
+51. `tests/mcp_server_loader_smoke_test.py`
+52. `tests/mcp_server_mock_payload_test.py`
+53. `tests/api_smoke_test.py`
 
 That order goes from simple configuration to the full app flow.
 
@@ -180,6 +186,16 @@ adk-masterclass/
 │   ├── README.md
 │   └── specs/
 │       └── business_banking_demo.yaml
+├── a2a_agent/
+│   ├── __init__.py
+│   ├── a2a_protocol.py
+│   ├── specialist_api.py
+│   ├── main.py
+│   ├── api_app.py
+│   ├── README.md
+│   ├── run_a2a_api_server.sh
+│   ├── run_a2a_specialist_server.sh
+│   └── run_a2a_api.sh
 ├── retail_deposit_api_agent/
 │   ├── __init__.py
 │   ├── agent.py
@@ -605,6 +621,45 @@ It:
 
 Think of this file as: "OpenAPI MCP lesson runner that is UI-ready."
 
+### `a2a_agent/a2a_protocol.py`
+
+This file defines Module 12 A2A wire-protocol helpers.
+
+It:
+
+- discovers the remote specialist Agent Card (`GET /.well-known/agent-card`)
+- creates delegated tasks (`POST /a2a/tasks`)
+- polls task status and waits for final artifact (`GET /a2a/tasks/{task_id}`)
+- raises clear `A2AError` messages for network and payload issues
+
+Think of this file as: "small client SDK for A2A steps."
+
+### `a2a_agent/specialist_api.py`
+
+This file exposes the Module 12 remote fixed-income specialist peer.
+
+It:
+
+- returns a machine-readable Agent Card with capabilities
+- accepts task creation payloads with goal + context
+- simulates queued/running/completed status transitions
+- returns a final CD ladder artifact with rung allocations and maturity actions
+
+Think of this file as: "the remote specialist agent over HTTP."
+
+### `a2a_agent/main.py`
+
+This file runs the Module 12 local banking assistant.
+
+It:
+
+- reads saver profile and savings goals from local mock data
+- delegates ladder planning to the remote specialist via `a2a_protocol.py`
+- records task timeline events until completion
+- falls back to a deterministic mini-ladder if the remote peer is unavailable
+
+Think of this file as: "local A2A delegator + fallback planner."
+
 ### `retail_deposit_api_agent/agent.py`
 
 This file builds the Module 26 `SequentialAgent` API workflow.
@@ -719,6 +774,18 @@ It:
 - runs `python -m function_tools_agent.main` with chosen scenario
 
 Think of this file as: "single command entrypoint for Module 09 demos."
+
+### `a2a_agent/run_a2a_api.sh`
+
+This script calls Module 12 standalone API directly.
+
+It:
+
+- sends `POST /chat` using `curl`
+- accepts savings customer ID as first argument (`SAV-9001` default)
+- pretty-prints nested JSON response payload
+
+Think of this file as: "quick API contract check for Module 12."
 
 ### `retail_deposit_api_agent/api_app.py`
 
@@ -1285,6 +1352,30 @@ Short version:
 
 ```text
 terminal or chat UI -> mcp_server/main.py -> LlmAgent + McpToolset -> Module 11 MCP server -> OpenAPI index + mock payload tools -> API integration response
+```
+
+### Flow 15: Run the Module 12 A2A CD ladder lesson
+
+Command:
+
+```bash
+./.venv/bin/python -m a2a_agent.main SAV-9001
+```
+
+What happens:
+
+1. Python starts `a2a_agent/main.py`.
+2. The local assistant loads saver profile and savings goals from local Module 12 mock data.
+3. It discovers remote specialist capabilities via `GET /.well-known/agent-card`.
+4. It submits delegated ladder construction via `POST /a2a/tasks`.
+5. It polls `GET /a2a/tasks/{task_id}` until status becomes `completed`.
+6. It returns final JSON containing task timeline, ladder artifact, and next action.
+7. If remote peer fails, it returns a local fallback mini-ladder and escalation guidance.
+
+Short version:
+
+```text
+local assistant -> Agent Card discovery -> create A2A task -> poll task status -> final ladder artifact (or fallback)
 ```
 
 ## The Core Relationship Between Files

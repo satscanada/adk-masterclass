@@ -1,8 +1,30 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Usage: ./run.sh   or   ./run.sh start   (start is optional, for muscle memory)
+# Expose Vite on the LAN: VITE_DEV_HOST=0.0.0.0 ./run.sh
+# Help: ./run.sh help
+
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT"
+
+case "${1:-}" in
+  -h|--help|help)
+    echo "Usage: ./run.sh [start]"
+    echo "  Starts Agent API on http://127.0.0.1:8512 and Vite on port 8513 (see ui/.env)."
+    echo ""
+    echo "Environment:"
+    echo "  LOG_LEVEL=debug          Lower uvicorn log noise threshold"
+    echo "  VITE_DEV_HOST=0.0.0.0    Listen on all interfaces (Vite \"Network\" URL)"
+    exit 0
+    ;;
+  start|'')
+    ;;
+  *)
+    echo "Unknown argument: $1 (try: ./run.sh help)" >&2
+    exit 1
+    ;;
+esac
 
 # Free a TCP port so a previous dev session (or stray process) does not block bind.
 # Uses lsof (macOS + typical Linux). Safe with set -e: empty lsof must not abort.
@@ -86,6 +108,9 @@ vite_pid=$!
 echo ""
 echo "  Agent API (FastAPI):  http://127.0.0.1:8512"
 echo "  React UI (Vite):      http://localhost:8513"
+if [[ -n "${VITE_DEV_HOST:-}" ]]; then
+  echo "  (VITE_DEV_HOST=${VITE_DEV_HOST} — check terminal for Network URL)"
+fi
 echo ""
 
 wait

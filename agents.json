@@ -82,6 +82,17 @@
       ]
     },
     {
+      "key": "a2a_agent",
+      "title": "A2A CD Ladder Agent",
+      "description": "Module 12: local banking assistant delegates CD ladder planning to a remote fixed-income specialist over A2A tasks and Agent Card discovery.",
+      "prompt_hint": "Enter a saver customer ID: SAV-9001 or SAV-7710.",
+      "module": "a2a_agent.main",
+      "suggestions": [
+        {"label": "Maya Patel (5-year ladder)", "prompt": "SAV-9001"},
+        {"label": "Jordan Lee (cash-return preference)", "prompt": "SAV-7710"}
+      ]
+    },
+    {
       "key": "retail_deposit_api_agent",
       "title": "Retail Deposit API Agent (sequential)",
       "description": "Module 26: Sequential retail deposit workflow with intake, risk, and decision stages that returns strict JSON output for API consumption.",

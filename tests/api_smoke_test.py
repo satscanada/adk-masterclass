@@ -87,7 +87,10 @@ def main() -> None:
             agents_response = client.get("/api/agents")
             assert agents_response.status_code == 200, agents_response.text
             agents_payload = agents_response.json()
-            assert len(agents_payload["agents"]) == 7, agents_payload
+            expected_agent_count = len(
+                json.loads((PROJECT_ROOT / "agents.json").read_text(encoding="utf-8"))["agents"],
+            )
+            assert len(agents_payload["agents"]) == expected_agent_count, agents_payload
             assert agents_payload["agents"][0]["key"] == "simple_litellm_agent", agents_payload
             streaming_meta = next(a for a in agents_payload["agents"] if a["key"] == "streaming_agent")
             assert streaming_meta["supports_streaming"] is True, streaming_meta

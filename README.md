@@ -4,7 +4,7 @@ This project shows a small but useful **Google Agent Development Kit (ADK)** lea
 
 It now includes:
 
-- the Python agent modules (including Module 06: a `BaseAgent` keyword router in `custom_agent/`, Module 07: a multi-agent business banking pipeline in `multi_agent_banking/`, Module 08: workflow orchestration patterns in `workflow_agent/`, Module 09: function-tool patterns in `function_tools_agent/`, Module 10: MCP client + Redis banking memory in `mcp_client/`, Module 11: a custom OpenAPI-backed MCP server in `mcp_server/`, and Module 26: a sequential retail-deposit workflow API agent in `retail_deposit_api_agent/`)
+- the Python agent modules (including Module 06: a `BaseAgent` keyword router in `custom_agent/`, Module 07: a multi-agent business banking pipeline in `multi_agent_banking/`, Module 08: workflow orchestration patterns in `workflow_agent/`, Module 09: function-tool patterns in `function_tools_agent/`, Module 10: MCP client + Redis banking memory in `mcp_client/`, Module 11: a custom OpenAPI-backed MCP server in `mcp_server/`, Module 12: Agent-to-Agent CD ladder delegation in `a2a_agent/`, and Module 26: a sequential retail-deposit workflow API agent in `retail_deposit_api_agent/`)
 - a FastAPI layer that exposes those agents over HTTP
 - the original Streamlit UI
 - a React + Vite + Tailwind chat UI that talks to the API
@@ -118,6 +118,16 @@ adk-masterclass/
 │   ├── README.md
 │   └── specs/
 │       └── business_banking_demo.yaml
+├── a2a_agent/
+│   ├── __init__.py
+│   ├── a2a_protocol.py
+│   ├── main.py
+│   ├── api_app.py
+│   ├── specialist_api.py
+│   ├── README.md
+│   ├── run_a2a_api_server.sh
+│   ├── run_a2a_specialist_server.sh
+│   └── run_a2a_api.sh
 ├── retail_deposit_api_agent/
 │   ├── __init__.py
 │   ├── agent.py
@@ -252,6 +262,21 @@ Keep **`AGENT_HELP.md`** and **`agentHelp.js`** aligned whenever you add or rena
 
 - `mcp_server/main.py`
   - Module 11: blocking `run_prompt(...)` and async `stream_prompt(...)`, so the custom MCP server lesson is stitched into the same API + React chat flow as Modules 04, 05, 06, 07, and 10.
+
+- `a2a_agent/main.py`
+  - Module 12: local banking assistant for CD laddering. Reads saver profile + goals, discovers a remote fixed-income specialist via Agent Card, creates an A2A task, polls for final artifact, and falls back to a local mini-ladder when the peer is unavailable.
+
+- `a2a_agent/a2a_protocol.py`
+  - Module 12: lightweight A2A wire-protocol client (discover card, create task, get task, wait for final artifact).
+
+- `a2a_agent/specialist_api.py`
+  - Module 12: remote specialist peer API exposing `/.well-known/agent-card`, `POST /a2a/tasks`, and `GET /a2a/tasks/{task_id}` for delegated CD-ladder planning.
+
+- `a2a_agent/api_app.py`
+  - Module 12 standalone FastAPI wrapper (`GET /health`, `POST /chat`) for invoking the local assistant over HTTP.
+
+- `a2a_agent/README.md`
+  - Module-local quickstart, curl usage, and Mermaid sequence diagram for A2A code flow.
 
 - `retail_deposit_api_agent/agent.py`
   - Module 26: `SequentialAgent` pipeline for retail deposit workflow API use-cases: `deposit_intake_agent` (profile + deposits), `deposit_risk_agent` (AML + velocity), and `deposit_decision_agent` (strict JSON decision payload).
@@ -657,6 +682,44 @@ Useful env vars:
 If `MODULE11_SPECS_DIR` is empty, Module 11 uses the bundled demo spec in `mcp_server/specs/`.
 
 In the React chat UI, select **MCP Server (OpenAPI explorer)**. This agent is also registered in `agents.json` with `supports_streaming: true`, so the same chat UI can drive the custom MCP server lesson over `POST /api/chat/stream`.
+
+## Run A2A CD ladder delegation (Module 12)
+
+This lesson implements Agent-to-Agent delegation from a local banking assistant to a remote fixed-income specialist.
+
+1. Start the remote specialist peer:
+
+```bash
+cd /Users/sathishkr/PycharmProjects/adk-masterclass
+./a2a_agent/run_a2a_specialist_server.sh
+```
+
+2. Start the Module 12 standalone API:
+
+```bash
+cd /Users/sathishkr/PycharmProjects/adk-masterclass
+./a2a_agent/run_a2a_api_server.sh
+```
+
+3. Invoke from curl:
+
+```bash
+cd /Users/sathishkr/PycharmProjects/adk-masterclass
+./a2a_agent/run_a2a_api.sh SAV-9001
+./a2a_agent/run_a2a_api.sh SAV-7710
+```
+
+4. Shared API route (registered in `agents.json`):
+
+```bash
+curl -sS http://127.0.0.1:8512/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agent_key": "a2a_agent",
+    "prompt": "SAV-9001",
+    "user_id": "curl-user"
+  }'
+```
 
 ## Run sequential retail-deposit API agent (Module 26)
 

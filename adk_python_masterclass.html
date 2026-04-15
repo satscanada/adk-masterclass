@@ -405,6 +405,7 @@
 
   /* ─── Comparison Grid ────────────────────────────── */
   .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+  .compare-grid.three { grid-template-columns: 1fr 1fr 1fr; }
 
   .compare-card {
     background: var(--surface);
@@ -585,7 +586,7 @@
 <nav class="sidebar">
   <div class="sidebar-logo">
     <div class="sidebar-logo-badge">🐍 ADK Python</div>
-    <div class="sidebar-title">AI Agent Masterclass</div>
+    <div class="sidebar-title">AI Agent Masterclass <span style="font-size:10px; color:var(--accent3); font-family:'Space Mono',monospace; margin-left:6px;">v2</span></div>
     <div class="sidebar-subtitle">google-adk · Python 3.10+ · LiteLLM</div>
   </div>
 
@@ -611,6 +612,9 @@
   <div class="nav-section">Sessions</div>
   <a class="nav-item" href="#session-memory"><span class="nav-num">13</span> In-Memory Sessions</a>
   <a class="nav-item" href="#session-db"><span class="nav-num">14</span> DB Persistence</a>
+  <a class="nav-item" href="#uc14a" style="padding-left:32px;"><span class="nav-num" style="color:var(--accent3);">14A</span> Spending Coach</a>
+  <a class="nav-item" href="#uc14b" style="padding-left:32px;"><span class="nav-num" style="color:var(--accent3);">14B</span> Risk Profile Evolution</a>
+  <a class="nav-item" href="#uc14c" style="padding-left:32px;"><span class="nav-num" style="color:var(--accent3);">14C</span> Goal Tracker</a>
 
   <div class="nav-section">Layer 3 · Adaptive Intelligence</div>
   <a class="nav-item" href="#feedback-loops"><span class="nav-num">15</span> Feedback Loops</a>
@@ -637,7 +641,7 @@
   <div class="hero">
     <div class="hero-eyebrow">Lead AI Educator Series · Google ADK for Python</div>
     <h1>Build AI Agents with<br><span class="highlight">ADK Python + LiteLLM</span></h1>
-    <p class="hero-desc">A comprehensive, hands-on masterclass covering every ADK agent type — from a single-agent hello world to multi-agent hierarchies, streaming, custom BaseAgent subclasses, workflow orchestrators, MCP toolsets, building your own MCP server, agent-to-agent (A2A) interoperability, and full session persistence. <strong>All LLM access exclusively through LiteLLM.</strong></p>
+    <p class="hero-desc">A comprehensive, hands-on masterclass covering every ADK agent type — from a single-agent hello world to multi-agent hierarchies, streaming, custom BaseAgent subclasses, workflow orchestrators, MCP toolsets, building your own MCP server, agent-to-agent (A2A) interoperability, full session persistence, and production-grade <strong>customer intelligence use cases</strong> built on persistent sessions. <strong>All LLM access exclusively through LiteLLM.</strong></p>
     <div class="hero-tags">
       <span class="tag">Python 3.10+</span>
       <span class="tag">asyncio</span>
@@ -647,6 +651,8 @@
       <span class="tag yellow">MCP Protocol</span>
       <span class="tag yellow">Session Persistence</span>
       <span class="tag red">No Direct LLM Access</span>
+      <span class="tag green">Customer Intelligence</span>
+      <span class="tag">v2 · 3 New Use Cases</span>
     </div>
   </div>
 
@@ -2089,6 +2095,73 @@ async def build_cd_ladder(customer_id: str) -&gt; dict:
     }</code></pre>
       </div>
 
+      <h3>Use case in this repository — <span class="ic">a2a_agent/</span></h3>
+      <p>Module 12 is implemented as a small <strong>two-process</strong> lesson: a <strong>local banking assistant</strong> (<span class="ic">a2a_agent/main.py</span>) loads mock saver profile + goals, then talks to a <strong>remote fixed-income specialist</strong> over HTTP using the same protocol shape as the pseudocode above — <span class="ic">GET /.well-known/agent-card</span>, <span class="ic">POST /a2a/tasks</span>, and <span class="ic">GET /a2a/tasks/{task_id}</span> until a final ladder <strong>artifact</strong> is ready. If the specialist is down, the local assistant returns a <strong>rule-based mini-ladder</strong> and explicit escalation guidance (production-style fallback).</p>
+
+      <div class="compare-grid">
+        <div class="compare-card">
+          <h4>Part A — Remote specialist (A2A peer)</h4>
+          <ul>
+            <li><span class="ic">a2a_agent/specialist_api.py</span> — FastAPI app: Agent Card + task store</li>
+            <li>Default base URL <span class="ic">http://127.0.0.1:8720</span> (override with <span class="ic">MODULE12_A2A_SPECIALIST_URL</span>)</li>
+            <li>Run helper: <span class="ic">a2a_agent/run_a2a_specialist_server.sh</span></li>
+          </ul>
+        </div>
+        <div class="compare-card">
+          <h4>Part B — Local assistant + APIs</h4>
+          <ul>
+            <li><span class="ic">a2a_agent/main.py</span> — <span class="ic">run_prompt</span> implements CD-ladder delegation + fallback</li>
+            <li><span class="ic">a2a_agent/a2a_protocol.py</span> — small HTTP client for card / tasks / polling</li>
+            <li>Registered in <span class="ic">agents.json</span> as <span class="ic">a2a_agent</span> (shared <span class="ic">POST /api/chat</span>)</li>
+            <li>Standalone API: <span class="ic">a2a_agent/api_app.py</span> on port <strong>8726</strong> — <span class="ic">a2a_agent/run_a2a_api_server.sh</span> + <span class="ic">a2a_agent/run_a2a_api.sh</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="concept" data-label="Demo customers (mock data)">
+        <table class="data-table" style="margin:0;">
+          <thead><tr><th>ID</th><th>Profile</th><th>Teaching angle</th></tr></thead>
+          <tbody>
+            <tr><td><span class="ic">SAV-9001</span></td><td>Maya Patel — higher cash, 5-year horizon</td><td>Auto-roll preference → specialist returns staggered rungs with <span class="ic">auto_roll</span> maturity actions</td></tr>
+            <tr><td><span class="ic">SAV-7710</span></td><td>Jordan Lee — cash-return preference</td><td><span class="ic">return_cash</span> on maturities so learners compare rollover vs liquidity</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="concept" data-label="What ships in this repo">
+        <table class="data-table" style="margin:0;">
+          <thead><tr><th>Piece</th><th>File / endpoint</th><th>Why it matters</th></tr></thead>
+          <tbody>
+            <tr><td>A2A client</td><td><span class="ic">a2a_agent/a2a_protocol.py</span></td><td>Encapsulates discover → create task → poll until <span class="ic">completed</span> + artifact</td></tr>
+            <tr><td>Specialist peer</td><td><span class="ic">a2a_agent/specialist_api.py</span></td><td>Implements the remote agent boundary: Agent Card, task lifecycle, ladder artifact</td></tr>
+            <tr><td>Local assistant</td><td><span class="ic">a2a_agent/main.py</span></td><td>Wires the banking scenario: profile + goals → delegation JSON (or fallback)</td></tr>
+            <tr><td>Standalone invoke</td><td><span class="ic">a2a_agent/api_app.py</span> · <span class="ic">POST /chat</span></td><td>Invoke the lesson with curl without going through the shared registry</td></tr>
+            <tr><td>Shared chat API</td><td><span class="ic">agents.json</span> key <span class="ic">a2a_agent</span> · <span class="ic">POST /api/chat</span></td><td>Same React + FastAPI stack as earlier modules</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">Run Module 12 — specialist + local API + curl</div>
+          <span class="code-lang">BASH</span>
+        </div>
+        <pre><code># Terminal 1 — remote fixed-income specialist (default :8720)
+./a2a_agent/run_a2a_specialist_server.sh
+
+# Terminal 2 — Module 12 standalone API (default :8726)
+./a2a_agent/run_a2a_api_server.sh
+
+# Terminal 3 — curl helper (pretty-prints JSON envelope)
+./a2a_agent/run_a2a_api.sh SAV-9001
+./a2a_agent/run_a2a_api.sh SAV-7710
+
+# Optional — shared agent API (with main stack on :8512)
+# curl -sS http://127.0.0.1:8512/api/chat \
+#   -H "Content-Type: application/json" \
+#   -d '{"agent_key":"a2a_agent","prompt":"SAV-9001","user_id":"curl-user"}'</code></pre>
+      </div>
+
       <div class="callout tip">
         <div class="callout-icon">🎓</div>
         <div class="callout-body">
@@ -2278,6 +2351,600 @@ msg = types.<span class="cl">Content</span>(
           Change <span class="ic">InMemorySessionService()</span> to <span class="ic">DatabaseSessionService("postgresql://...")</span> and your entire agent stack gains persistence — no other code changes needed. This is why ADK uses a service abstraction instead of hardcoding storage.
         </div>
       </div>
+    </div>
+
+
+    <!-- ─── Module 14 Use Cases divider ─── -->
+    <div class="divider">
+      <div class="divider-line"></div>
+      <div class="divider-text">Module 14 · Customer Intelligence Use Cases</div>
+      <div class="divider-line"></div>
+    </div>
+
+    <div class="module" style="padding-bottom:24px;">
+      <p style="max-width:800px;">The three use cases below extend Module 14 into <strong>production banking scenarios</strong>. Each one persists customer activity and suggestions across sessions to drive decisions over time. A key architectural boundary is enforced throughout: <strong>the LLM never performs financial arithmetic or time-based decisions</strong> — all guards are deterministic <span class="ic">FunctionTool</span>s that read <span class="ic">session.state</span>. The LLM handles only customer-facing message framing.</p>
+    </div>
+
+
+    <!-- ══════════════════════════════ MODULE 14A ══ -->
+    <div id="uc14a" class="module">
+      <div class="module-header">
+        <span class="module-num">MODULE 14A</span>
+        <div>
+          <h2>Persistent Spending Pattern Coach</h2>
+          <div class="module-meta">standalone · state accumulation · suppression logic · FunctionTool guard · ToolContext</div>
+        </div>
+      </div>
+
+      <div style="display:inline-flex;align-items:center;gap:8px;font-family:'Space Mono',monospace;font-size:11px;padding:6px 14px;border-radius:20px;margin-bottom:20px;letter-spacing:0.08em;background:rgba(67,233,123,0.1);border:1px solid rgba(67,233,123,0.3);color:var(--accent3);">USE CASE A — STANDALONE</div>
+
+      <p>Each time a customer's transaction data is processed, the agent appends a spending category snapshot to <span class="ic">session.state["spending_log"]</span>. After three entries, a deterministic guard function detects a rising trend and the coaching agent surfaces a targeted suggestion. <strong>The key teaching moment: stateful suppression logic</strong> — the agent never resurfaces a declined suggestion within a 30-day cooling-off window. This pattern is reusable in every production notification agent students will build.</p>
+
+      <div class="arch-diagram">
+        <strong style="color:var(--text); display:block; margin-bottom:16px;">Spending Coach — Two-Stage SequentialAgent Pipeline</strong>
+        <div class="arch-row">
+          <div class="arch-box accent">Transaction Ingest<br><span style="font-size:10px">weekly category totals</span></div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box green">log_agent<br><span style="font-size:10px">get_weekly_transactions<br>append_spending_snapshot<br>output_key="log_updated"</span></div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box yellow">coaching_agent<br><span style="font-size:10px">check_trend_and_suppression<br>record_suggestion_response<br>output_key="coaching_result"</span></div>
+        </div>
+        <div style="text-align:center;color:var(--text-dim);font-family:'JetBrains Mono',monospace;font-size:11px;margin:12px 0 4px;">↓ spending_log + suggestion_history persist to PostgreSQL across sessions</div>
+      </div>
+
+      <div class="concept yellow" data-label="New Pattern">
+        <p style="margin:0"><strong>Stateful Suppression</strong> — <span class="ic">check_trend_and_suppression</span> reads two keys from <span class="ic">session.state</span>: the spending log and the suggestion history. It applies a 30-day cooling-off rule deterministically. The LLM only sees the suppress/proceed result as a tool return — it never evaluates the date arithmetic itself.</p>
+      </div>
+
+      <h3>Build Steps</h3>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-num" style="background:var(--accent3);color:var(--bg);">1</div>
+          <div class="step-body">
+            <strong>Scaffold <span class="ic">spending_coach/</span> — tools.py, agent.py, main.py</strong>
+            <p>No new pip packages beyond Module 14's baseline (<span class="ic">aiosqlite</span> or <span class="ic">asyncpg</span>). Define three mock customer profiles covering the three teaching outcomes: trend fires (CUST-3001), stable spend — no suggestion (CUST-3002), rising but suppressed because customer declined within 30 days (CUST-3003).</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num" style="background:var(--accent3);color:var(--bg);">2</div>
+          <div class="step-body">
+            <strong>Implement four tools in <span class="ic">tools.py</span></strong>
+            <p><span class="ic">get_weekly_transactions</span> — returns mock weekly snapshot. <span class="ic">append_spending_snapshot</span> — uses <span class="ic">ToolContext</span> to append to <span class="ic">session.state["spending_log"]</span>. <span class="ic">check_trend_and_suppression</span> — reads log + suggestion history, computes trend and suppress flag deterministically. <span class="ic">record_suggestion_response</span> — writes customer's "accepted" / "declined" / "not_now" to <span class="ic">session.state["suggestion_history"]</span>.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num" style="background:var(--accent3);color:var(--bg);">3</div>
+          <div class="step-body">
+            <strong>Build the two-stage <span class="ic">SequentialAgent</span> in <span class="ic">agent.py</span></strong>
+            <p><span class="ic">log_agent</span> calls <span class="ic">get_weekly_transactions</span> then <span class="ic">append_spending_snapshot</span>, writes <span class="ic">output_key="log_updated"</span>. <span class="ic">coaching_agent</span> reads <span class="ic">{log_updated}</span> from state, calls <span class="ic">check_trend_and_suppression</span>, and conditionally frames a suggestion. <span class="ic">SequentialAgent</span> wraps both.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num" style="background:var(--accent3);color:var(--bg);">4</div>
+          <div class="step-body">
+            <strong>Wire <span class="ic">DatabaseSessionService</span> with a stable customer session ID</strong>
+            <p>Session ID pattern: <span class="ic">f"spending-coach-{customer_id}"</span>. On first call <span class="ic">create_session</span> with seed state <span class="ic">{"spending_log": [], "suggestion_history": []}</span>. On every subsequent call <span class="ic">get_session</span> resumes and all accumulated state is immediately available to the pipeline tools via <span class="ic">ToolContext</span>.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num" style="background:var(--accent3);color:var(--bg);">5</div>
+          <div class="step-body">
+            <strong>Run the three teaching scenarios</strong>
+            <p>Run CUST-3001 three times to show trend detection accumulating and firing. Run CUST-3002 to show stable spend producing no suggestion. Pre-populate CUST-3003's <span class="ic">suggestion_history</span> with a declined entry dated within 30 days — show suppression firing even when the trend is real. After each run, print the full <span class="ic">session.state</span> so students can see every key the DB has retained.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">spending_coach/tools.py — state accumulation + deterministic guard</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">from</span> datetime <span class="kw">import</span> datetime, timedelta
+<span class="kw">from</span> google.adk.tools <span class="kw">import</span> ToolContext
+
+_MOCK_TRANSACTIONS = {
+    <span class="st">"CUST-3001"</span>: [{<span class="st">"week"</span>:<span class="st">"W10"</span>,<span class="st">"category"</span>:<span class="st">"dining"</span>,<span class="st">"amount"</span>:<span class="nm">280</span>},{<span class="st">"week"</span>:<span class="st">"W11"</span>,<span class="st">"category"</span>:<span class="st">"dining"</span>,<span class="st">"amount"</span>:<span class="nm">340</span>},{<span class="st">"week"</span>:<span class="st">"W12"</span>,<span class="st">"category"</span>:<span class="st">"dining"</span>,<span class="st">"amount"</span>:<span class="nm">410</span>}],
+    <span class="st">"CUST-3002"</span>: [{<span class="st">"week"</span>:<span class="st">"W10"</span>,<span class="st">"category"</span>:<span class="st">"dining"</span>,<span class="st">"amount"</span>:<span class="nm">220</span>},{<span class="st">"week"</span>:<span class="st">"W11"</span>,<span class="st">"category"</span>:<span class="st">"dining"</span>,<span class="st">"amount"</span>:<span class="nm">215</span>},{<span class="st">"week"</span>:<span class="st">"W12"</span>,<span class="st">"category"</span>:<span class="st">"dining"</span>,<span class="st">"amount"</span>:<span class="nm">230</span>}],
+    <span class="st">"CUST-3003"</span>: [{<span class="st">"week"</span>:<span class="st">"W10"</span>,<span class="st">"category"</span>:<span class="st">"grocery"</span>,<span class="st">"amount"</span>:<span class="nm">190</span>},{<span class="st">"week"</span>:<span class="st">"W11"</span>,<span class="st">"category"</span>:<span class="st">"grocery"</span>,<span class="st">"amount"</span>:<span class="nm">260</span>},{<span class="st">"week"</span>:<span class="st">"W12"</span>,<span class="st">"category"</span>:<span class="st">"grocery"</span>,<span class="st">"amount"</span>:<span class="nm">330</span>}],
+}
+
+<span class="kw">def</span> <span class="fn">get_weekly_transactions</span>(customer_id: <span class="cl">str</span>) -> <span class="cl">dict</span>:
+    <span class="dc">"""Return the latest weekly spending snapshot for a customer."""</span>
+    rows = _MOCK_TRANSACTIONS.<span class="fn">get</span>(customer_id, [])
+    <span class="kw">return</span> {<span class="st">"customer_id"</span>: customer_id, <span class="st">"latest"</span>: rows[-<span class="nm">1</span>] <span class="kw">if</span> rows <span class="kw">else</span> {}, <span class="st">"all_weeks"</span>: rows}
+
+<span class="kw">def</span> <span class="fn">append_spending_snapshot</span>(
+    customer_id: <span class="cl">str</span>, week: <span class="cl">str</span>, category: <span class="cl">str</span>, amount: <span class="cl">float</span>,
+    tool_context: <span class="cl">ToolContext</span>   <span class="cm"># ADK injects — LLM never sees this</span>
+) -> <span class="cl">dict</span>:
+    <span class="dc">"""Append a weekly spending snapshot to session.state['spending_log']."""</span>
+    log = tool_context.state.<span class="fn">get</span>(<span class="st">"spending_log"</span>, [])
+    log.<span class="fn">append</span>({<span class="st">"week"</span>: week, <span class="st">"category"</span>: category,
+                <span class="st">"amount"</span>: amount, <span class="st">"recorded_at"</span>: datetime.utcnow().<span class="fn">isoformat</span>()})
+    tool_context.state[<span class="st">"spending_log"</span>] = log
+    <span class="kw">return</span> {<span class="st">"appended"</span>: <span class="nm">True</span>, <span class="st">"log_length"</span>: <span class="fn">len</span>(log)}
+
+<span class="kw">def</span> <span class="fn">check_trend_and_suppression</span>(customer_id: <span class="cl">str</span>, tool_context: <span class="cl">ToolContext</span>) -> <span class="cl">dict</span>:
+    <span class="dc">"""Deterministic guard — never calls an LLM. Returns trend + suppress flags."""</span>
+    log = tool_context.state.<span class="fn">get</span>(<span class="st">"spending_log"</span>, [])
+    <span class="kw">if</span> <span class="fn">len</span>(log) < <span class="nm">3</span>:
+        <span class="kw">return</span> {<span class="st">"trend_detected"</span>: <span class="nm">False</span>, <span class="st">"reason"</span>: <span class="st">"insufficient data"</span>}
+    recent = log[-<span class="nm">3</span>:]
+    <span class="kw">if</span> <span class="fn">len</span>({r[<span class="st">"category"</span>] <span class="kw">for</span> r <span class="kw">in</span> recent}) > <span class="nm">1</span>:
+        <span class="kw">return</span> {<span class="st">"trend_detected"</span>: <span class="nm">False</span>, <span class="st">"reason"</span>: <span class="st">"mixed categories"</span>}
+    amounts  = [r[<span class="st">"amount"</span>] <span class="kw">for</span> r <span class="kw">in</span> recent]
+    rising   = amounts[<span class="nm">0</span>] < amounts[<span class="nm">1</span>] < amounts[<span class="nm">2</span>]
+    pct      = <span class="fn">round</span>((amounts[<span class="nm">2</span>] - amounts[<span class="nm">0</span>]) / amounts[<span class="nm">0</span>] * <span class="nm">100</span>, <span class="nm">1</span>)
+    category = recent[<span class="nm">0</span>][<span class="st">"category"</span>]
+    cutoff   = datetime.utcnow() - timedelta(days=<span class="nm">30</span>)
+    suppressed = <span class="nm">any</span>(
+        s[<span class="st">"category"</span>] == category <span class="kw">and</span> s[<span class="st">"response"</span>] == <span class="st">"declined"</span>
+        <span class="kw">and</span> datetime.<span class="fn">fromisoformat</span>(s[<span class="st">"date"</span>]) > cutoff
+        <span class="kw">for</span> s <span class="kw">in</span> tool_context.state.<span class="fn">get</span>(<span class="st">"suggestion_history"</span>, [])
+    )
+    <span class="kw">return</span> {<span class="st">"trend_detected"</span>: rising, <span class="st">"category"</span>: category,
+            <span class="st">"pct_increase"</span>: pct, <span class="st">"suppressed"</span>: suppressed, <span class="st">"amounts"</span>: amounts}
+
+<span class="kw">def</span> <span class="fn">record_suggestion_response</span>(
+    category: <span class="cl">str</span>, response: <span class="cl">str</span>, tool_context: <span class="cl">ToolContext</span>
+) -> <span class="cl">dict</span>:
+    <span class="dc">"""Record customer's response to a suggestion. response: 'accepted'|'declined'|'not_now'"""</span>
+    history = tool_context.state.<span class="fn">get</span>(<span class="st">"suggestion_history"</span>, [])
+    history.<span class="fn">append</span>({<span class="st">"category"</span>: category, <span class="st">"response"</span>: response,
+                    <span class="st">"date"</span>: datetime.utcnow().<span class="fn">isoformat</span>()})
+    tool_context.state[<span class="st">"suggestion_history"</span>] = history
+    <span class="kw">return</span> {<span class="st">"recorded"</span>: <span class="nm">True</span>}</code></pre>
+      </div>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">spending_coach/agent.py</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">from</span> google.adk.agents <span class="kw">import</span> <span class="cl">LlmAgent</span>, <span class="cl">SequentialAgent</span>
+<span class="kw">from</span> google.adk.models.lite_llm <span class="kw">import</span> <span class="cl">LiteLlm</span>
+<span class="kw">from</span> .tools <span class="kw">import</span> (get_weekly_transactions, append_spending_snapshot,
+                   check_trend_and_suppression, record_suggestion_response)
+
+llm = <span class="cl">LiteLlm</span>(model=<span class="st">"anthropic/claude-sonnet-4-5"</span>)
+
+log_agent = <span class="cl">LlmAgent</span>(
+    name=<span class="st">"log_agent"</span>, model=llm,
+    instruction=(<span class="st">"Call get_weekly_transactions for {customer_id}. "</span>
+                 <span class="st">"Then call append_spending_snapshot. Confirm the snapshot was recorded."</span>),
+    tools=[get_weekly_transactions, append_spending_snapshot],
+    output_key=<span class="st">"log_updated"</span>,
+)
+
+coaching_agent = <span class="cl">LlmAgent</span>(
+    name=<span class="st">"coaching_agent"</span>, model=llm,
+    instruction=(<span class="st">"Log update: {log_updated}\n\n"</span>
+                 <span class="st">"Call check_trend_and_suppression. "</span>
+                 <span class="st">"If trend_detected=False OR suppressed=True: brief neutral acknowledgement only. "</span>
+                 <span class="st">"If trend_detected=True AND suppressed=False: craft a warm spending alert "</span>
+                 <span class="st">"referencing the category and % increase. Call record_suggestion_response if customer responds."</span>),
+    tools=[check_trend_and_suppression, record_suggestion_response],
+    output_key=<span class="st">"coaching_result"</span>,
+)
+
+spending_coach_pipeline = <span class="cl">SequentialAgent</span>(
+    name=<span class="st">"spending_coach_pipeline"</span>,
+    sub_agents=[log_agent, coaching_agent],
+)</code></pre>
+      </div>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">spending_coach/main.py — DatabaseSessionService + stable session ID</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">import</span> asyncio
+<span class="kw">from</span> google.adk.sessions <span class="kw">import</span> <span class="cl">DatabaseSessionService</span>
+<span class="kw">from</span> google.adk.runners <span class="kw">import</span> <span class="cl">Runner</span>
+<span class="kw">from</span> google.adk <span class="kw">import</span> types
+<span class="kw">from</span> .agent <span class="kw">import</span> spending_coach_pipeline
+
+APP_NAME = <span class="st">"spending_coach"</span>
+DB_URL   = <span class="st">"postgresql://user:password@localhost:5432/agents_db"</span>
+
+<span class="kw">async def</span> <span class="fn">run_spending_coach</span>(customer_id: <span class="cl">str</span>):
+    session_service = <span class="cl">DatabaseSessionService</span>(DB_URL)
+    session_id = <span class="st">f"spending-coach-{customer_id}"</span>   <span class="cm"># stable — same customer, same session</span>
+
+    existing = <span class="kw">await</span> session_service.<span class="fn">get_session</span>(
+        app_name=APP_NAME, user_id=customer_id, session_id=session_id)
+    <span class="kw">if</span> existing:
+        session = existing
+        <span class="fn">print</span>(<span class="st">f"✓ Resumed. Log has {len(session.state.get('spending_log', []))} entries."</span>)
+    <span class="kw">else</span>:
+        session = <span class="kw">await</span> session_service.<span class="fn">create_session</span>(
+            app_name=APP_NAME, user_id=customer_id, session_id=session_id,
+            state={<span class="st">"spending_log"</span>: [], <span class="st">"suggestion_history"</span>: [], <span class="st">"customer_id"</span>: customer_id})
+        <span class="fn">print</span>(<span class="st">"✓ New session created."</span>)
+
+    runner = <span class="cl">Runner</span>(app_name=APP_NAME, agent=spending_coach_pipeline, session_service=session_service)
+    msg    = types.<span class="cl">Content</span>(role=<span class="st">"user"</span>, parts=[
+        types.<span class="cl">Part</span>(text=<span class="st">f"Process latest spending data for customer {customer_id}."</span>)])
+
+    <span class="kw">async for</span> event <span class="kw">in</span> runner.<span class="fn">run_async</span>(session_id=session.id, user_id=customer_id, new_message=msg):
+        <span class="kw">if</span> event.content <span class="kw">and</span> event.content.parts:
+            <span class="kw">for</span> part <span class="kw">in</span> event.content.parts:
+                <span class="kw">if</span> <span class="fn">hasattr</span>(part, <span class="st">"text"</span>) <span class="kw">and</span> part.text:
+                    <span class="fn">print</span>(part.text, end=<span class="st">""</span>)
+    <span class="fn">print</span>()
+
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    <span class="cm"># Run 1: 1 log entry — trend insufficient, no suggestion</span>
+    <span class="cm"># Run 3: 3 entries — CUST-3001 trend fires; CUST-3003 suppressed</span>
+    asyncio.<span class="fn">run</span>(<span class="fn">run_spending_coach</span>(<span class="st">"CUST-3001"</span>))</code></pre>
+      </div>
+
+      <div class="compare-grid">
+        <div class="compare-card">
+          <h4>CUST-3001 — Trend fires</h4>
+          <ul>
+            <li>3 rising dining entries: $280 → $340 → $410</li>
+            <li>No declined suggestions on record</li>
+            <li>Teaching outcome: coaching suggestion delivered</li>
+          </ul>
+        </div>
+        <div class="compare-card">
+          <h4>CUST-3002 — No suggestion</h4>
+          <ul>
+            <li>3 stable dining entries: $220 → $215 → $230</li>
+            <li>No rising trend detected</li>
+            <li>Teaching outcome: neutral acknowledgement only</li>
+          </ul>
+        </div>
+        <div class="compare-card">
+          <h4>CUST-3003 — Suppressed</h4>
+          <ul>
+            <li>3 rising grocery entries: $190 → $260 → $330</li>
+            <li>Pre-seeded: "declined" within 30 days</li>
+            <li>Teaching outcome: trend real but suppressed</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════ MODULE 14B ══ -->
+    <div id="uc14b" class="module">
+      <div class="module-header">
+        <span class="module-num">MODULE 14B</span>
+        <div>
+          <h2>Overdraft Risk Profile Evolution</h2>
+          <div class="module-meta">continuation of Module 07 · risk_history · tier escalation · before_agent_callback · zero changes to M07</div>
+        </div>
+      </div>
+
+      <div style="display:inline-flex;align-items:center;gap:8px;font-family:'Space Mono',monospace;font-size:11px;padding:6px 14px;border-radius:20px;margin-bottom:20px;letter-spacing:0.08em;background:rgba(91,127,255,0.1);border:1px solid rgba(91,127,255,0.3);color:var(--accent);">USE CASE B — CONTINUATION OF MODULE 07</div>
+
+      <p>This use case extends the Module 07 overdraft approval pipeline directly. After each pipeline run, the outcome is written to <span class="ic">session.state["risk_history"]</span>. A <span class="ic">profile_agent</span> reads the accumulated history and re-evaluates the customer's risk tier. After three high-risk events within 30 days, the tier escalates and a <span class="ic">before_agent_callback</span> on future runs injects a Financial Wellness escalation path. <strong>Zero lines of Module 07 code are changed.</strong> Students see Module 14 as the additive, non-breaking production upgrade path.</p>
+
+      <div class="arch-diagram">
+        <strong style="color:var(--text); display:block; margin-bottom:16px;">Module 07 Pipeline → Extended with Persistent Risk Profile</strong>
+        <div class="arch-row">
+          <div class="arch-box accent">Customer ID</div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box green">deposit_agent<br><span style="font-size:10px">M07 — unchanged</span></div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box yellow">bill_agent<br><span style="font-size:10px">M07 — unchanged</span></div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box red">decision_agent<br><span style="font-size:10px">M07 — unchanged<br>output_key="overdraft_decision"</span></div>
+        </div>
+        <div style="text-align:center;color:var(--text-dim);font-family:'JetBrains Mono',monospace;font-size:11px;margin:8px 0;">↓ NEW — profile_agent runs after M07 pipeline completes</div>
+        <div class="arch-row">
+          <div class="arch-box">record_decision<br><span style="font-size:10px">FunctionTool → risk_history</span></div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box green">compute_risk_tier<br><span style="font-size:10px">FunctionTool → risk_tier</span></div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box accent">before_agent_callback<br><span style="font-size:10px">reads risk_tier from DB state<br>injects wellness if "high"</span></div>
+        </div>
+      </div>
+
+      <div class="concept" data-label="Key Pattern">
+        <p style="margin:0"><strong>Wrapping without touching</strong> — the outer <span class="ic">SequentialAgent</span> takes <span class="ic">sub_agents=[banking_overdraft_pipeline, profile_agent]</span>. The Module 07 pipeline is imported as-is. The extension is purely additive. This is the production upgrade pattern: never rewrite, always wrap.</p>
+      </div>
+
+      <h3>Build Steps</h3>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Create <span class="ic">overdraft_persistent/</span> — import M07 pipeline unchanged</strong>
+            <p>The directory contains only new files: <span class="ic">profile_tools.py</span>, <span class="ic">agent.py</span>, <span class="ic">callbacks.py</span>, <span class="ic">main.py</span>. Module 07's <span class="ic">multi_agent_banking/</span> directory is imported as a dependency — nothing inside it is edited.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Implement <span class="ic">record_decision</span> and <span class="ic">compute_risk_tier</span> in <span class="ic">profile_tools.py</span></strong>
+            <p><span class="ic">record_decision</span> appends the pipeline decision (APPROVE / CONDITIONAL / DENY) and a risk score to <span class="ic">session.state["risk_history"]</span> via <span class="ic">ToolContext</span>. <span class="ic">compute_risk_tier</span> reads the last 30 days of history, applies tier rules deterministically (3+ high-risk events → "high"; 1–2 or avg score &gt; 0.65 → "medium"; else "low"), and writes <span class="ic">session.state["risk_tier"]</span>. The LLM never computes the tier.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Build <span class="ic">profile_agent</span> and the outer <span class="ic">SequentialAgent</span></strong>
+            <p><span class="ic">profile_agent</span> instruction reads <span class="ic">{overdraft_decision}</span> (written by M07's <span class="ic">decision_agent</span> via <span class="ic">output_key</span>), then calls <span class="ic">record_decision</span> and <span class="ic">compute_risk_tier</span>. Outer pipeline: <span class="ic">sub_agents=[banking_overdraft_pipeline, profile_agent]</span>.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Implement <span class="ic">risk_tier_preflight</span> in <span class="ic">callbacks.py</span></strong>
+            <p>A <span class="ic">before_agent_callback</span> that reads <span class="ic">session.state["risk_tier"]</span> — persisted from previous sessions. If tier is "high", prepends a Financial Wellness escalation prefix to the agent's instruction. The callback fires on every <span class="ic">profile_agent</span> invocation — the DB-persisted tier drives branching without any code change.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <strong>Demo sequence: force tier escalation then observe the callback fire</strong>
+            <p>Run CUST-1001 three times with DENY-weighted mock data to accumulate three high-risk events. On the fourth run, observe <span class="ic">risk_tier_preflight</span> reading "high" from the DB-persisted state and injecting the wellness escalation — with no change to any agent or tool definition.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">overdraft_persistent/profile_tools.py</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">from</span> datetime <span class="kw">import</span> datetime, timedelta
+<span class="kw">from</span> google.adk.tools <span class="kw">import</span> ToolContext
+
+<span class="kw">def</span> <span class="fn">record_decision</span>(
+    customer_id: <span class="cl">str</span>, decision: <span class="cl">str</span>, risk_score: <span class="cl">float</span>, tool_context: <span class="cl">ToolContext</span>
+) -> <span class="cl">dict</span>:
+    <span class="dc">"""Append pipeline outcome to session.state['risk_history']."""</span>
+    history = tool_context.state.<span class="fn">get</span>(<span class="st">"risk_history"</span>, [])
+    history.<span class="fn">append</span>({<span class="st">"date"</span>: datetime.utcnow().<span class="fn">isoformat</span>(),
+                    <span class="st">"decision"</span>: decision, <span class="st">"risk_score"</span>: risk_score})
+    tool_context.state[<span class="st">"risk_history"</span>] = history
+    <span class="kw">return</span> {<span class="st">"recorded"</span>: <span class="nm">True</span>, <span class="st">"total_events"</span>: <span class="fn">len</span>(history)}
+
+<span class="kw">def</span> <span class="fn">compute_risk_tier</span>(customer_id: <span class="cl">str</span>, tool_context: <span class="cl">ToolContext</span>) -> <span class="cl">dict</span>:
+    <span class="dc">"""
+    Deterministic tier — never calls an LLM.
+    Rules: 3+ DENY/CONDITIONAL in 30d → high; 1-2 or avg_score > 0.65 → medium; else low.
+    Writes risk_tier and tier_updated_at to session.state.
+    """</span>
+    history = tool_context.state.<span class="fn">get</span>(<span class="st">"risk_history"</span>, [])
+    cutoff  = datetime.utcnow() - timedelta(days=<span class="nm">30</span>)
+    recent  = [h <span class="kw">for</span> h <span class="kw">in</span> history <span class="kw">if</span> datetime.<span class="fn">fromisoformat</span>(h[<span class="st">"date"</span>]) > cutoff]
+    high_events = <span class="fn">sum</span>(<span class="nm">1</span> <span class="kw">for</span> r <span class="kw">in</span> recent <span class="kw">if</span> r[<span class="st">"decision"</span>] <span class="kw">in</span> (<span class="st">"DENY"</span>, <span class="st">"CONDITIONAL"</span>))
+    avg_score   = <span class="fn">sum</span>(r[<span class="st">"risk_score"</span>] <span class="kw">for</span> r <span class="kw">in</span> recent) / <span class="fn">max</span>(<span class="fn">len</span>(recent), <span class="nm">1</span>)
+    tier = <span class="st">"high"</span> <span class="kw">if</span> high_events >= <span class="nm">3</span> <span class="kw">else</span> <span class="st">"medium"</span> <span class="kw">if</span> high_events >= <span class="nm">1</span> <span class="kw">or</span> avg_score > <span class="nm">0.65</span> <span class="kw">else</span> <span class="st">"low"</span>
+    tool_context.state[<span class="st">"risk_tier"</span>]       = tier
+    tool_context.state[<span class="st">"tier_updated_at"</span>] = datetime.utcnow().<span class="fn">isoformat</span>()
+    <span class="kw">return</span> {<span class="st">"risk_tier"</span>: tier, <span class="st">"high_events"</span>: high_events, <span class="st">"avg_score"</span>: <span class="fn">round</span>(avg_score, <span class="nm">3</span>)}</code></pre>
+      </div>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">overdraft_persistent/agent.py — wraps M07 as sub-agent</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">from</span> google.adk.agents <span class="kw">import</span> <span class="cl">LlmAgent</span>, <span class="cl">SequentialAgent</span>
+<span class="kw">from</span> google.adk.models.lite_llm <span class="kw">import</span> <span class="cl">LiteLlm</span>
+<span class="kw">from</span> multi_agent_banking.agent <span class="kw">import</span> pipeline <span class="kw">as</span> banking_overdraft_pipeline  <span class="cm"># ← M07 intact</span>
+<span class="kw">from</span> .profile_tools <span class="kw">import</span> record_decision, compute_risk_tier
+<span class="kw">from</span> .callbacks <span class="kw">import</span> risk_tier_preflight
+
+llm = <span class="cl">LiteLlm</span>(model=<span class="st">"anthropic/claude-sonnet-4-5"</span>)
+
+profile_agent = <span class="cl">LlmAgent</span>(
+    name=<span class="st">"profile_agent"</span>, model=llm,
+    instruction=(<span class="st">"Module 07 decision: {overdraft_decision}\n\n"</span>
+                 <span class="st">"Extract decision label and risk_score. Call record_decision then compute_risk_tier."</span>),
+    tools=[record_decision, compute_risk_tier],
+    output_key=<span class="st">"tier_update"</span>,
+    before_agent_callback=risk_tier_preflight,  <span class="cm"># reads risk_tier from persisted state</span>
+)
+
+overdraft_persistent_pipeline = <span class="cl">SequentialAgent</span>(
+    name=<span class="st">"overdraft_persistent_pipeline"</span>,
+    sub_agents=[banking_overdraft_pipeline, profile_agent],  <span class="cm"># M07 runs first, then profile</span>
+)</code></pre>
+      </div>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">overdraft_persistent/callbacks.py — before_agent_callback from DB state</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">from</span> google.adk.agents.callback_context <span class="kw">import</span> <span class="cl">CallbackContext</span>
+
+<span class="kw">def</span> <span class="fn">risk_tier_preflight</span>(callback_context: <span class="cl">CallbackContext</span>) -> <span class="nm">None</span>:
+    <span class="dc">"""
+    before_agent_callback — fires on every profile_agent invocation.
+    Reads risk_tier from DB-persisted session.state.
+    If tier is 'high', prepends a Financial Wellness escalation prefix
+    to the agent's instruction — no code change required.
+    """</span>
+    tier = callback_context.state.<span class="fn">get</span>(<span class="st">"risk_tier"</span>, <span class="st">"low"</span>)
+    <span class="kw">if</span> tier == <span class="st">"high"</span>:
+        wellness_prefix = (
+            <span class="st">"⚠️ ESCALATION ACTIVE: Customer is HIGH risk tier. After the standard profile update, "</span>
+            <span class="st">"include a Financial Wellness recommendation — suggest they contact Wealth Advisory. "</span>
+            <span class="st">"Reference their recent risk history.\n\n"</span>
+        )
+        callback_context.agent.instruction = wellness_prefix + (callback_context.agent.instruction <span class="kw">or</span> <span class="st">""</span>)
+    callback_context.state[<span class="st">"preflight_tier_checked"</span>] = tier</code></pre>
+      </div>
+
+      <div class="callout info">
+        <div class="callout-icon">💡</div>
+        <div class="callout-body">
+          <strong>Cross-module payoff</strong>
+          Students built Module 07 once. Now they wrap it as a sub-agent with zero changes to produce a system with persistent risk memory. The callback reads a value written by a tool in a previous session and routes the pipeline differently. This is the moment the Module 14 abstraction becomes visceral — the DB is not a detail, it is the intelligence layer.
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════ MODULE 14C ══ -->
+    <div id="uc14c" class="module">
+      <div class="module-header">
+        <span class="module-num">MODULE 14C</span>
+        <div>
+          <h2>Long-term Financial Goal Tracker</h2>
+          <div class="module-meta">standalone · three-stage SequentialAgent · output_key across sessions · goal vs progress · motivational nudge</div>
+        </div>
+      </div>
+
+      <div style="display:inline-flex;align-items:center;gap:8px;font-family:'Space Mono',monospace;font-size:11px;padding:6px 14px;border-radius:20px;margin-bottom:20px;letter-spacing:0.08em;background:rgba(249,202,36,0.1);border:1px solid rgba(249,202,36,0.3);color:var(--accent4);">USE CASE C — STANDALONE</div>
+
+      <p>A goal-setting agent captures the customer's financial goal (home purchase, vacation fund, debt payoff) and persists it as immutable seed state. Each month, a three-stage <span class="ic">SequentialAgent</span> checks actual savings against plan, classifies on-track status, and generates a personalised nudge. The closing insight is the most important: <span class="ic">output_key</span> is not ephemeral — with <span class="ic">DatabaseSessionService</span>, the keys written in Month 1 are still in state in Month 6. <strong><span class="ic">output_key</span> is the agent's long-term memory.</strong></p>
+
+      <div class="arch-diagram">
+        <strong style="color:var(--text); display:block; margin-bottom:16px;">Goal Tracker — Three-Stage Pipeline (runs monthly on same session)</strong>
+        <div class="arch-row">
+          <div class="arch-box accent">Monthly Trigger<br><span style="font-size:10px">new savings amount</span></div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box green">progress_agent<br><span style="font-size:10px">get_goal, get_this_month_savings<br>evaluate_progress (FunctionTool)<br>output_key="progress_status"</span></div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box yellow">coaching_agent<br><span style="font-size:10px">reads {progress_status}<br>output_key="coaching_suggestion"</span></div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box red">nudge_agent<br><span style="font-size:10px">reads {progress_status}+{coaching_suggestion}<br>output_key="monthly_nudge" ← persists!</span></div>
+        </div>
+        <div style="text-align:center;color:var(--text-dim);font-family:'JetBrains Mono',monospace;font-size:11px;margin:12px 0 4px;">↓ goal, progress_log, all output_keys persist to PostgreSQL — readable next month</div>
+      </div>
+
+      <h3>Build Steps</h3>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-num" style="background:var(--accent4);color:var(--bg);">1</div>
+          <div class="step-body">
+            <strong>Implement four tools in <span class="ic">tools.py</span></strong>
+            <p><span class="ic">set_goal</span> — called once, writes the goal dict to <span class="ic">session.state["goal"]</span> and initialises an empty <span class="ic">progress_log</span>. <span class="ic">get_goal</span> — reads goal + progress_log from state on every run. <span class="ic">get_this_month_savings</span> — returns mock monthly savings. <span class="ic">evaluate_progress</span> — deterministic: computes on_track, variance, cumulative total, projected finish date, appends to <span class="ic">progress_log</span>. The LLM never computes dates or percentages.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num" style="background:var(--accent4);color:var(--bg);">2</div>
+          <div class="step-body">
+            <strong>Build the three-stage <span class="ic">SequentialAgent</span></strong>
+            <p><span class="ic">progress_agent</span>: calls <span class="ic">get_goal</span>, <span class="ic">get_this_month_savings</span>, <span class="ic">evaluate_progress</span> — writes <span class="ic">output_key="progress_status"</span>. <span class="ic">coaching_agent</span>: reads <span class="ic">{progress_status}</span>, generates correction if behind — writes <span class="ic">output_key="coaching_suggestion"</span>. <span class="ic">nudge_agent</span>: reads both keys, composes warm customer message — writes <span class="ic">output_key="monthly_nudge"</span>. All three keys persist to DB.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num" style="background:var(--accent4);color:var(--bg);">3</div>
+          <div class="step-body">
+            <strong>Implement the first-run vs returning-run flow in <span class="ic">main.py</span></strong>
+            <p>First run: <span class="ic">get_session</span> returns nothing → <span class="ic">create_session</span> with seed state, call <span class="ic">set_goal</span> directly to seed the goal, then run the pipeline. Returning runs: <span class="ic">get_session</span> returns the existing session with the persisted goal and all prior <span class="ic">progress_log</span> entries immediately available. Teach this pattern explicitly — it is the production lifecycle for any long-lived customer agent.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num" style="background:var(--accent4);color:var(--bg);">4</div>
+          <div class="step-body">
+            <strong>Run three customers across three months</strong>
+            <p>CUST-5001 ($1,250/mo saved, $1,389 required — behind): watch course-correction coaching fire. CUST-5002 ($800/mo — significantly behind): watch escalating urgency in nudge phrasing across months. CUST-5003 ($1,600/mo — ahead): watch celebration messaging and accelerated projected finish date.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num" style="background:var(--accent4);color:var(--bg);">5</div>
+          <div class="step-body">
+            <strong>Print full state after three runs — deliver the closing insight</strong>
+            <p>Show the full <span class="ic">session.state</span> after three monthly runs. <span class="ic">progress_status</span>, <span class="ic">coaching_suggestion</span>, and <span class="ic">monthly_nudge</span> from all three runs are all present. Tell students: this is the mental model shift Module 14 is designed to deliver. <span class="ic">output_key</span> written in January is still here in March. The database is the agent's memory across time.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">goal_tracker/agent.py — three-stage pipeline with output_key chaining</div>
+          <span class="code-lang">PYTHON</span>
+        </div>
+        <pre><code><span class="kw">from</span> google.adk.agents <span class="kw">import</span> <span class="cl">LlmAgent</span>, <span class="cl">SequentialAgent</span>
+<span class="kw">from</span> google.adk.models.lite_llm <span class="kw">import</span> <span class="cl">LiteLlm</span>
+<span class="kw">from</span> .tools <span class="kw">import</span> get_goal, get_this_month_savings, evaluate_progress
+
+llm = <span class="cl">LiteLlm</span>(model=<span class="st">"anthropic/claude-sonnet-4-5"</span>)
+
+progress_agent = <span class="cl">LlmAgent</span>(
+    name=<span class="st">"progress_agent"</span>, model=llm,
+    instruction=(<span class="st">"Call get_goal. If no goal: ask customer to set one. "</span>
+                 <span class="st">"Otherwise call get_this_month_savings then evaluate_progress. "</span>
+                 <span class="st">"Summarise: goal type, target, monthly required, actual saved, on_track, projected_finish."</span>),
+    tools=[get_goal, get_this_month_savings, evaluate_progress],
+    output_key=<span class="st">"progress_status"</span>,
+)
+
+coaching_agent = <span class="cl">LlmAgent</span>(
+    name=<span class="st">"goal_coaching_agent"</span>, model=llm,
+    instruction=(<span class="st">"Progress: {progress_status}\n\n"</span>
+                 <span class="st">"If on_track=True: respond 'ON_TRACK — no correction needed'. "</span>
+                 <span class="st">"If on_track=False: suggest one concrete spending category to cut "</span>
+                 <span class="st">"with a specific dollar amount to close the gap."</span>),
+    output_key=<span class="st">"coaching_suggestion"</span>,
+)
+
+nudge_agent = <span class="cl">LlmAgent</span>(
+    name=<span class="st">"nudge_agent"</span>, model=llm,
+    instruction=(<span class="st">"Progress: {progress_status}\n"</span>
+                 <span class="st">"Coaching: {coaching_suggestion}\n\n"</span>
+                 <span class="st">"Write a warm 3–4 sentence message referencing the goal type and projected "</span>
+                 <span class="st">"finish date. If on track: celebrate. If behind: include the coaching suggestion "</span>
+                 <span class="st">"naturally, not as a lecture. Close with an encouraging sentence."</span>),
+    output_key=<span class="st">"monthly_nudge"</span>,  <span class="cm"># persists to DB — readable in next month's session</span>
+)
+
+goal_tracker_pipeline = <span class="cl">SequentialAgent</span>(
+    name=<span class="st">"goal_tracker_pipeline"</span>,
+    sub_agents=[progress_agent, coaching_agent, nudge_agent],
+)</code></pre>
+      </div>
+
+      <div class="compare-grid">
+        <div class="compare-card">
+          <h4>CUST-5001 — Behind schedule</h4>
+          <ul>
+            <li>Goal: home purchase $50,000 / 36 months</li>
+            <li>Required: $1,389/mo · Saving: $1,250/mo</li>
+            <li>Teaching outcome: course-correction + nudge</li>
+          </ul>
+        </div>
+        <div class="compare-card">
+          <h4>CUST-5002 — Significantly behind</h4>
+          <ul>
+            <li>Goal: vacation fund $12,000 / 15 months</li>
+            <li>Required: $800/mo · Saving: $750/mo</li>
+            <li>Teaching outcome: urgency escalates across months</li>
+          </ul>
+        </div>
+        <div class="compare-card">
+          <h4>CUST-5003 — Ahead of schedule</h4>
+          <ul>
+            <li>Goal: debt payoff $24,000 / 18 months</li>
+            <li>Required: $1,333/mo · Saving: $1,600/mo</li>
+            <li>Teaching outcome: celebration + early finish date</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout tip">
+        <div class="callout-icon">✅</div>
+        <div class="callout-body">
+          <strong>Closing insight — output_key is long-term memory</strong>
+          In Modules 07 and 08 students used <span class="ic">output_key</span> to pass state between agents within a single run. Module 14C shows that <span class="ic">DatabaseSessionService</span> makes those same keys durable across months. The nudge written in January is still in state in June. This is the mental model shift Module 14 is designed to deliver: the database is not a storage detail — it is the agent's memory across time.
+        </div>
+      </div>
+
+      <table class="data-table" style="margin-top:32px;">
+        <thead>
+          <tr><th>Module</th><th>State Keys Written</th><th>New ADK Concept</th><th>Architecture Pattern</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>14A</td><td>spending_log · suggestion_history · coaching_result</td><td>ToolContext · stateful suppression</td><td>Accumulating log + 30-day cooling gate</td></tr>
+          <tr><td>14B</td><td>risk_history · risk_tier · tier_updated_at</td><td>before_agent_callback from DB state</td><td>Wrap M07 as sub-agent — zero changes</td></tr>
+          <tr><td>14C</td><td>goal · progress_log · total_saved · monthly_nudge</td><td>output_key across sessions</td><td>Immutable seed + monthly append + nudge</td></tr>
+        </tbody>
+      </table>
     </div>
 
 
@@ -3417,6 +4084,9 @@ curl -sS http://127.0.0.1:8626/chat \
           <tr><td>09–11</td><td>Layer 1 · Tools</td><td>Function Tools → MCP</td><td>Custom tool integration</td></tr>
           <tr><td>12</td><td>Layer 1 · Interop</td><td>Agent-to-Agent (A2A)</td><td>Remote agent delegation &amp; task flow</td></tr>
           <tr><td>13–14</td><td>Layer 2 · Memory</td><td>In-memory → DB Persistence</td><td>Session state management</td></tr>
+          <tr><td>14A</td><td>Layer 2 · Memory</td><td>Spending Pattern Coach</td><td>State accumulation · suppression gate · ToolContext</td></tr>
+          <tr><td>14B</td><td>Layer 2 · Memory</td><td>Overdraft Risk Profile Evolution</td><td>before_agent_callback from DB · wrap M07 zero changes</td></tr>
+          <tr><td>14C</td><td>Layer 2 · Memory</td><td>Financial Goal Tracker</td><td>output_key across sessions · long-term memory arc</td></tr>
           <tr><td>15</td><td>Layer 3</td><td>Feedback Loops</td><td>observe → score → store → adjust</td></tr>
           <tr><td>16</td><td>Layer 3</td><td>Outcome Tracking</td><td>Correctness, timeliness, efficiency evals</td></tr>
           <tr><td>17</td><td>Layer 3</td><td>Persistent Behavioral Memory</td><td>pgvector semantic user model</td></tr>
@@ -3436,8 +4106,8 @@ curl -sS http://127.0.0.1:8626/chat \
   </div><!-- /content -->
 
   <footer class="footer">
-    <span>ADK Python Masterclass · Lead AI Educator Series</span>
-    <span>google-adk · Python 3.10+ · LiteLLM · MCP Protocol</span>
+    <span>ADK Python Masterclass v2 · Lead AI Educator Series · +3 Customer Intelligence Use Cases</span>
+    <span>google-adk · Python 3.10+ · LiteLLM · MCP Protocol · DatabaseSessionService</span>
   </footer>
 
 </main>

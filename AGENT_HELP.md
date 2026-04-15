@@ -22,6 +22,7 @@ This file is the **markdown companion** to the in-app Help panel in the React UI
 | 07 Business Banking | `multi_agent_banking` | `SequentialAgent` pipeline: deposit → bill → decision; mock tools; `demo_expected_decision`; streaming audit trail in UI; optional CLI script. | `POST /api/chat` or `POST /api/chat/stream` |
 | 10 MCP Client (Redis banking) | `mcp_client` | Single `LlmAgent` + `McpToolset` (Redis MCP server). Persists and reads customer-scoped business banking memory keys in Redis. | `POST /api/chat` or `POST /api/chat/stream` |
 | 11 MCP Server (OpenAPI explorer) | `mcp_server` | Custom MCP server + ADK client pair. Loads OpenAPI specs at startup, searches operations, returns resolved request/response schemas, and generates mock payloads. | `POST /api/chat` or `POST /api/chat/stream` |
+| 12 A2A CD Ladder | `a2a_agent` | Local banking assistant delegates CD ladder planning to a remote fixed-income specialist via Agent Card discovery and A2A task polling, with fallback mini-ladder if the peer is unavailable. | `POST /api/chat` |
 
 ### Module 01 — Single Agent
 
@@ -94,6 +95,18 @@ This file is the **markdown companion** to the in-app Help panel in the React UI
 - **Transport:** The ADK agent supports both `stdio` and `streamable-http` through `MODULE11_MCP_TRANSPORT`. Local development defaults to `stdio`; remote deployments can point to `MODULE11_MCP_HTTP_URL`.
 - **Specs folder:** The server reads `MODULE11_SPECS_DIR` at startup. If it is empty, Module 11 falls back to the bundled demo spec in `mcp_server/specs/`.
 - **React UI:** Registered in `agents.json` with `supports_streaming: true`, so the chat UI can use the same `POST /api/chat/stream` flow as Modules 04, 05, 06, 07, and 10.
+
+### Module 12 — A2A CD Ladder Agent
+
+- **Python package:** `a2a_agent/`
+- **Entry:** `a2a_agent.main:run_prompt` (blocking)
+- **Pattern:** Local banking assistant gathers saver profile + goals, discovers remote peer with `GET /.well-known/agent-card`, submits `POST /a2a/tasks`, then polls `GET /a2a/tasks/{task_id}` until the ladder artifact is complete.
+- **Use case:** Lesson 12 banking scenario for CD ladder delegation, maturity scheduling, and rollover-vs-cash actions across an explicit network trust boundary.
+- **Fallback:** If the remote specialist cannot be reached, the module returns a deterministic 3-rung mini-ladder and escalation next steps.
+- **Standalone APIs:**
+  - `a2a_agent.api_app` — local assistant wrapper (`GET /health`, `POST /chat`)
+  - `a2a_agent.specialist_api` — remote specialist peer (`GET /.well-known/agent-card`, `POST /a2a/tasks`, `GET /a2a/tasks/{task_id}`)
+- **Scripts:** `a2a_agent/run_a2a_specialist_server.sh`, `a2a_agent/run_a2a_api_server.sh`, `a2a_agent/run_a2a_api.sh`.
 
 ## Adding a new agent or module
 
