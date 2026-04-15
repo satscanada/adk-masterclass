@@ -5,7 +5,7 @@ Module 14A implements a persistent spending-pattern coach using ADK `DatabaseSes
 ## Use Case
 
 - Input customer IDs: `CUST-3001`, `CUST-3002`, `CUST-3003`
-- Stage 1 (`spending_log_agent`) appends a weekly spend snapshot to `session.state["spending_log"]`
+- Stage 1 (`spending_log_agent`) upserts a weekly spend snapshot into `session.state["spending_log"]` (keyed by `customer_id + week`, so re-running the same week updates rather than duplicates)
 - Stage 2 (`spending_coaching_agent`) applies deterministic trend detection and a 30-day suppression rule from `session.state["suggestion_history"]`
 - The LLM never computes date windows or suppression logic; tools do that deterministically
 
@@ -74,9 +74,28 @@ cd /Users/sathishkr/PycharmProjects/adk-masterclass
 
 ```bash
 cd /Users/sathishkr/PycharmProjects/adk-masterclass
+
+# --- Normal coaching runs (builds spending_log over 3+ weeks to trigger trend) ---
 ./.venv/bin/python -m db_persist.14A.main CUST-3001
 ./.venv/bin/python -m db_persist.14A.main CUST-3001
 ./.venv/bin/python -m db_persist.14A.main CUST-3001
+
+# --- Custom simulation snapshot ---
+./.venv/bin/python -m db_persist.14A.main CUST-3001 --week 2026-W20 --category travel --amount 777.5
+
+# --- Responding to a coaching suggestion ---
+# Use --response with: accepted | declined | not_now
+./.venv/bin/python -m db_persist.14A.main CUST-3001 --response accepted
+./.venv/bin/python -m db_persist.14A.main CUST-3001 --response declined
+./.venv/bin/python -m db_persist.14A.main CUST-3001 --response not_now
+
+# You can also combine with a snapshot in the same call:
+./.venv/bin/python -m db_persist.14A.main CUST-3001 --week 2026-W21 --category dining --amount 320 --response accepted
+
+# Legacy: embed the keyword in the prompt string (backward compatible)
+./.venv/bin/python -m db_persist.14A.main "CUST-3001 declined"
+
+# Suppression demo (CUST-3003 starts with a declined suggestion 10 days ago)
 ./.venv/bin/python -m db_persist.14A.main CUST-3003
 ```
 
@@ -90,26 +109,73 @@ chmod +x db_persist/14A/run_14a_api_server.sh db_persist/14A/run_14a_api.sh
 
 ### 5) Call API with curl helper
 
+Script signature: `./run_14a_api.sh [prompt] [user_id] [session_id] [week] [category] [amount] [response]`
+
 ```bash
 cd /Users/sathishkr/PycharmProjects/adk-masterclass
+
+# Basic coaching run
 ./db_persist/14A/run_14a_api.sh CUST-3001
+
+# With session scope
 ./db_persist/14A/run_14a_api.sh CUST-3001 api-user-A spending-coach-cust-3001
-./db_persist/14A/run_14a_api.sh "CUST-3001 declined" api-user-B spending-coach-cust-3001
+
+# With snapshot override
+./db_persist/14A/run_14a_api.sh CUST-3001 api-user-A spending-coach-cust-3001 2026-W21 travel 455.25
+
+# Responding to a coaching suggestion (7th arg: accepted | declined | not_now)
+./db_persist/14A/run_14a_api.sh CUST-3001 api-user-A "" "" "" "" accepted
+./db_persist/14A/run_14a_api.sh CUST-3001 api-user-A "" "" "" "" declined
+./db_persist/14A/run_14a_api.sh CUST-3001 api-user-A "" "" "" "" not_now
+
+# Snapshot + response in one call
+./db_persist/14A/run_14a_api.sh CUST-3001 api-user-A spending-coach-cust-3001 2026-W21 dining 380 accepted
 ```
 
-In default `MODULE14A_SESSION_SCOPE=customer` mode, those last two calls still resume
-the same persisted customer thread even though the caller `user_id` differs.
-Set `MODULE14A_SESSION_SCOPE=user` if you want strict caller-user isolation instead.
+In default `MODULE14A_SESSION_SCOPE=customer` mode all those calls resume the same
+persisted customer thread even if caller `user_id` differs.
+Set `MODULE14A_SESSION_SCOPE=user` if you want strict caller-user isolation.
 
-Direct curl:
+Direct curl — coaching run with dedicated `customer_response` field:
 
 ```bash
+# Normal coaching run with snapshot override
 curl -sS http://127.0.0.1:8740/chat \
   -H "Content-Type: application/json" \
   -d '{
     "prompt": "CUST-3001",
     "user_id": "curl-user",
-    "session_id": "spending-coach-cust-3001"
+    "session_id": "spending-coach-cust-3001",
+    "week": "2026-W21",
+    "category": "travel",
+    "amount": 455.25
+  }' | python3 -m json.tool
+
+# Accepting a coaching suggestion
+curl -sS http://127.0.0.1:8740/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "CUST-3001",
+    "user_id": "curl-user",
+    "customer_response": "accepted"
+  }' | python3 -m json.tool
+
+# Declining
+curl -sS http://127.0.0.1:8740/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "CUST-3001",
+    "user_id": "curl-user",
+    "customer_response": "declined"
+  }' | python3 -m json.tool
+
+# Not now / remind later
+curl -sS http://127.0.0.1:8740/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "CUST-3001",
+    "user_id": "curl-user",
+    "customer_response": "not_now"
   }' | python3 -m json.tool
 ```
 
@@ -125,7 +191,7 @@ sequenceDiagram
     participant Coach as spending_coaching_agent
     participant Tools as 14A tools.py
 
-    CLI->>API: POST /chat (prompt, user_id, session_id?)
+    CLI->>API: POST /chat (prompt, user_id, session_id?, week?, category?, amount?, customer_response?)
     API->>Main: run_prompt(...)
     Note over Main: derive effective user_id\n(scope=customer => customer::<customer_id>)
     Main->>DB: get_session(app_name, effective_user_id, session_id)
@@ -134,7 +200,7 @@ sequenceDiagram
     end
     Note over Main,DB: DB connect uses search_path=adk_module14a
     Main->>Log: run stage 1
-    Log->>Tools: get_weekly_transactions(customer_id)
+    Log->>Tools: get_weekly_transactions_with_input(customer_id, week?, category?, amount?)
     Log->>Tools: append_spending_snapshot(...)
     Tools->>DB: ADK persists updated session.state
     Main->>Coach: run stage 2

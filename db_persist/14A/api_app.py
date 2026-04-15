@@ -5,9 +5,9 @@ from __future__ import annotations
 import uuid
 
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
-from .main import _extract_customer_id, _stable_session_id, run_prompt
+from .main import _VALID_RESPONSES, _extract_customer_id, _stable_session_id, run_prompt
 
 
 class ChatPayload(BaseModel):
@@ -23,6 +23,39 @@ class ChatPayload(BaseModel):
         default=None,
         description="Optional explicit session ID. Defaults to spending-coach-<customer>.",
     )
+    week: str | None = Field(
+        default=None,
+        description="Optional custom week override for simulation (for example 2026-W20).",
+    )
+    category: str | None = Field(
+        default=None,
+        description="Optional custom category override (for example dining, grocery, travel).",
+    )
+    amount: float | None = Field(
+        default=None,
+        description="Optional custom amount override for simulation.",
+    )
+    customer_response: str | None = Field(
+        default=None,
+        description=(
+            "Customer's response to a prior coaching suggestion. "
+            "One of: accepted, declined, not_now. "
+            "Takes precedence over any response keyword embedded in the prompt string."
+        ),
+    )
+
+    @field_validator("customer_response", mode="before")
+    @classmethod
+    def validate_response(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        norm = v.strip().lower()
+        if norm not in _VALID_RESPONSES:
+            raise ValueError(
+                f"customer_response must be one of: {', '.join(sorted(_VALID_RESPONSES))}. "
+                f"Got: {v!r}"
+            )
+        return norm
 
 
 class ChatResponse(BaseModel):
@@ -61,6 +94,10 @@ def run_spending_chat(payload: ChatPayload) -> ChatResponse:
             clean_prompt,
             user_id=payload.user_id.strip() or "module14a-user",
             session_id=payload.session_id,
+            week=payload.week,
+            category=payload.category,
+            amount=payload.amount,
+            customer_response=payload.customer_response,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

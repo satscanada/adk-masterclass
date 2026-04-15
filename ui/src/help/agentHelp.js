@@ -157,4 +157,14 @@ export const HELP_MODULES = [
       'POST /api/chat. Optional MODULE14_DB_URL for sqlite+aiosqlite or Postgres. Same RET-3101 / RET-4420 quick-start chips.',
     supportsStreaming: false,
   },
+  {
+    module: '14A',
+    title: 'Spending pattern coach (PostgreSQL)',
+    agentKey: 'spending_pattern_coach_14a',
+    pattern:
+      'SequentialAgent (spending_log_agent -> spending_coaching_agent) with deterministic trend/suppression guards; state persists in Postgres with customer-scoped sessions.',
+    apiSurface:
+      'Shared POST /api/chat: prompt + session only — embed accepted/declined/not_now in the message if needed. Standalone Module 14A POST /chat: week, category, amount, customer_response. CLI: --response; run_14a_api.sh: optional 7th arg.',
+    supportsStreaming: false,
+  },
 ]

@@ -312,16 +312,16 @@ Keep **`AGENT_HELP.md`** and **`agentHelp.js`** aligned whenever you add or rena
   - Module 14A: two-stage `SequentialAgent` (`spending_log_agent` -> `spending_coaching_agent`) using the same LiteLLM connection pattern as Module 07 (`_build_llm(settings)` with token floor).
 
 - `db_persist/14A/main.py`
-  - Module 14A runtime: `DatabaseSessionService` backed by PostgreSQL (`localhost:6432` default via `MODULE14A_DB_URL`), stable customer session IDs, and seeded suppression history for demo customer `CUST-3003`.
+  - Module 14A runtime: `DatabaseSessionService` backed by PostgreSQL (`localhost:6433` default via `MODULE14A_DB_URL`), schema-targeted via `MODULE14A_DB_SCHEMA` (`adk_module14a` default), customer-scoped effective user IDs (`MODULE14A_SESSION_SCOPE=customer` by default), optional snapshot simulation inputs (`week`, `category`, `amount`), and optional suggestion reply via `customer_response` (`accepted` / `declined` / `not_now`) or the same keyword embedded in the prompt (CLI: `--response`).
 
 - `db_persist/14A/api_app.py`
-  - Standalone FastAPI wrapper (`GET /health`, `POST /chat`) for Module 14A.
+  - Standalone FastAPI wrapper (`GET /health`, `POST /chat`) for Module 14A; `POST /chat` accepts `customer_response` alongside `prompt`, `user_id`, optional `session_id`, and optional simulation fields.
 
 - `db_persist/14A/run_14a_api_server.sh` and `db_persist/14A/run_14a_api.sh`
   - Helper scripts to start the standalone Module 14A API and invoke it through curl.
 
 - `db_persist/14A/guide.md`
-  - Module-local guide for setup, Docker Postgres on `6432`, quick tests, and Mermaid sequence flow.
+  - Module-local guide for setup, Docker Postgres on `6433`, quick tests (including custom `week/category/amount` simulation), and Mermaid sequence flow.
 
 - `agents.json`
   - Stores the agent list for the UI
@@ -781,14 +781,14 @@ In the React UI, pick **Retail Deposit Banking — DB sessions (Module 14)** (or
 
 Module 14A implements a stateful spending-pattern coach. Each run appends one weekly snapshot to `session.state["spending_log"]`, then a deterministic guard tool checks trend + suppression (declined suggestion within 30 days) before the coaching stage formats customer-facing guidance.
 
-Start PostgreSQL on Docker localhost `6432`:
+Start PostgreSQL on Docker localhost `6433`:
 
 ```bash
 docker run --name module14a-postgres --rm \
   -e POSTGRES_USER=postgres \
   -e POSTGRES_PASSWORD=postgres \
   -e POSTGRES_DB=adk_sessions \
-  -p 6432:5432 \
+  -p 6433:5432 \
   -d postgres:16
 ```
 
@@ -799,6 +799,10 @@ cd /Users/sathishkr/PycharmProjects/adk-masterclass
 ./.venv/bin/python -m db_persist.14A.main CUST-3001
 ./.venv/bin/python -m db_persist.14A.main CUST-3002
 ./.venv/bin/python -m db_persist.14A.main CUST-3003
+# custom simulated snapshot
+./.venv/bin/python -m db_persist.14A.main CUST-3001 --week 2026-W20 --category travel --amount 777.5
+# after a coaching suggestion, record the customer's choice
+./.venv/bin/python -m db_persist.14A.main CUST-3001 --response accepted
 ```
 
 Standalone Module 14A FastAPI + curl:
@@ -815,6 +819,17 @@ In another terminal:
 cd /Users/sathishkr/PycharmProjects/adk-masterclass
 ./db_persist/14A/run_14a_api.sh CUST-3001
 ./db_persist/14A/run_14a_api.sh "CUST-3001 declined" curl-user spending-coach-cust-3001
+# args: prompt user_id session_id week category amount [response]
+./db_persist/14A/run_14a_api.sh CUST-3001 api-user spending-coach-cust-3001 2026-W21 travel 455.25
+./db_persist/14A/run_14a_api.sh CUST-3001 api-user spending-coach-cust-3001 2026-W21 travel 455.25 accepted
+```
+
+Direct JSON example for the standalone API (explicit `customer_response`):
+
+```bash
+curl -sS http://127.0.0.1:8740/chat \
+  -H "Content-Type: application/json" \
+  -d '{"prompt":"CUST-3001","user_id":"curl-user","customer_response":"accepted"}' | python3 -m json.tool
 ```
 
 Shared API/UI agent key: `spending_pattern_coach_14a` (`module`: `db_persist.14A.main`).

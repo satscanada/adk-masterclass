@@ -54,6 +54,40 @@ def get_weekly_transactions(customer_id: str, tool_context: ToolContext) -> dict
     }
 
 
+def get_weekly_transactions_with_input(
+    customer_id: str,
+    week: str | None = None,
+    category: str | None = None,
+    amount: float | None = None,
+    tool_context: ToolContext | None = None,
+) -> dict:
+    """
+    Return deterministic weekly spend snapshot for this run, with optional overrides.
+
+    When week/category/amount are supplied, this returns the caller-provided snapshot so
+    simulations can inject arbitrary data from CLI/API. Otherwise it falls back to the
+    deterministic mock sequence.
+    """
+    if week and category and amount is not None:
+        return {
+            "customer_id": customer_id,
+            "snapshot": {
+                "week": str(week),
+                "category": str(category).strip(),
+                "amount": float(amount),
+            },
+            "history_weeks_available": "custom_input",
+            "log_entries_for_customer": "custom_input",
+            "source": "custom_input",
+        }
+
+    if tool_context is None:
+        raise ValueError(
+            "tool_context is required when no custom week/category/amount is provided.",
+        )
+    return get_weekly_transactions(customer_id, tool_context)
+
+
 def append_spending_snapshot(
     customer_id: str,
     week: str,
@@ -61,24 +95,48 @@ def append_spending_snapshot(
     amount: float,
     tool_context: ToolContext,
 ) -> dict:
-    """Append one weekly snapshot to session.state['spending_log']."""
+    """Upsert one weekly snapshot into session.state['spending_log'].
+
+    If an entry for the same (customer_id, week) already exists it is updated
+    in-place rather than duplicated.  Duplicate entries for the same week would
+    make the last two amounts identical and break the strictly-increasing trend
+    check even when the increase is real.
+    """
     log = tool_context.state.get("spending_log", [])
     if not isinstance(log, list):
         log = []
 
-    log.append(
-        {
-            "customer_id": customer_id,
-            "week": week,
-            "category": category,
-            "amount": float(amount),
-            "recorded_at": datetime.now(UTC).isoformat(),
-        }
+    entry = {
+        "customer_id": customer_id,
+        "week": week,
+        "category": str(category).strip().lower(),
+        "amount": float(amount),
+        "recorded_at": datetime.now(UTC).isoformat(),
+    }
+
+    existing_idx = next(
+        (
+            i
+            for i, row in enumerate(log)
+            if isinstance(row, dict)
+            and row.get("customer_id") == customer_id
+            and row.get("week") == week
+        ),
+        None,
     )
+    if existing_idx is not None:
+        log[existing_idx] = entry
+        upsert_action = "updated"
+    else:
+        log.append(entry)
+        upsert_action = "appended"
+
     tool_context.state["spending_log"] = log
     return {
         "appended": True,
+        "upsert_action": upsert_action,
         "customer_id": customer_id,
+        "week": week,
         "log_length_total": len(log),
         "log_length_customer": len(_records_for_customer(tool_context.state, customer_id)),
     }

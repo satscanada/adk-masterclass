@@ -2416,13 +2416,13 @@ _SESSION_LAST_CUSTOMER: dict[tuple[str, str], str] = {}
 
       <div style="display:inline-flex;align-items:center;gap:8px;font-family:'Space Mono',monospace;font-size:11px;padding:6px 14px;border-radius:20px;margin-bottom:20px;letter-spacing:0.08em;background:rgba(67,233,123,0.1);border:1px solid rgba(67,233,123,0.3);color:var(--accent3);">USE CASE A — STANDALONE</div>
 
-      <p>Each time a customer's transaction data is processed, the agent appends a spending category snapshot to <span class="ic">session.state["spending_log"]</span>. After three entries, a deterministic guard function detects a rising trend and the coaching agent surfaces a targeted suggestion. <strong>The key teaching moment: stateful suppression logic</strong> — the agent never resurfaces a declined suggestion within a 30-day cooling-off window. This pattern is reusable in every production notification agent students will build.</p>
+      <p>Each time a customer's transaction data is processed, the agent appends a spending category snapshot to <span class="ic">session.state["spending_log"]</span>. The run can use either seeded demo data or caller-supplied simulation inputs (<span class="ic">week</span>, <span class="ic">category</span>, <span class="ic">amount</span>). After three entries, a deterministic guard function detects a rising trend and the coaching agent surfaces a targeted suggestion. On a <strong>follow-up turn</strong>, the customer can reply with <span class="ic">accepted</span>, <span class="ic">declined</span>, or <span class="ic">not_now</span> via CLI <span class="ic">--response</span>, JSON field <span class="ic">customer_response</span> on <span class="ic">POST /chat</span>, the optional seventh argument to <span class="ic">run_14a_api.sh</span>, or a legacy keyword embedded in the prompt string — the pipeline normalizes that into <span class="ic">customer_response=…</span> for the coaching agent so <span class="ic">record_suggestion_response</span> can persist to <span class="ic">suggestion_history</span>. <strong>The key teaching moment: stateful suppression logic</strong> — the agent never resurfaces a declined suggestion within a 30-day cooling-off window. This pattern is reusable in every production notification agent students will build.</p>
 
       <div class="callout tip">
         <div class="callout-icon">✅</div>
         <div class="callout-body">
           <strong>Implemented in this repo</strong>
-          Runtime: <span class="ic">db_persist/14A/main.py</span> · Standalone API: <span class="ic">db_persist/14A/api_app.py</span> · Scripts: <span class="ic">db_persist/14A/run_14a_api_server.sh</span> and <span class="ic">db_persist/14A/run_14a_api.sh</span> · Start API: <span class="ic">./db_persist/14A/run_14a_api_server.sh</span> · Curl path: <span class="ic">./db_persist/14A/run_14a_api.sh CUST-3001</span> or <span class="ic">curl -sS http://127.0.0.1:8740/chat ...</span> · Default DB URL: <span class="ic">postgresql+asyncpg://postgres:postgres@127.0.0.1:6433/adk_sessions</span> · Default schema/search_path: <span class="ic">adk_module14a</span> · Default session scope: <span class="ic">customer</span> (effective user id <span class="ic">customer::&lt;customer_id&gt;</span>).
+          Runtime: <span class="ic">db_persist/14A/main.py</span> · Standalone API: <span class="ic">db_persist/14A/api_app.py</span> · Scripts: <span class="ic">db_persist/14A/run_14a_api_server.sh</span> and <span class="ic">db_persist/14A/run_14a_api.sh</span> · Start API: <span class="ic">./db_persist/14A/run_14a_api_server.sh</span> · Curl helper example: <span class="ic">./db_persist/14A/run_14a_api.sh CUST-3001 api-user spending-coach-cust-3001 2026-W21 travel 455.25 accepted</span> (args: prompt, user_id, session_id, week, category, amount, response) · Suggestion reply: <span class="ic">--response accepted|declined|not_now</span> on CLI, <span class="ic">customer_response</span> on <span class="ic">POST /chat</span>, or keyword in prompt · Default DB URL: <span class="ic">postgresql+asyncpg://postgres:postgres@127.0.0.1:6433/adk_sessions</span> · Default schema/search_path: <span class="ic">adk_module14a</span> · Default session scope: <span class="ic">customer</span> (effective user id <span class="ic">customer::&lt;customer_id&gt;</span>).
         </div>
       </div>
 
@@ -2431,7 +2431,7 @@ _SESSION_LAST_CUSTOMER: dict[tuple[str, str], str] = {}
         <div class="arch-row">
           <div class="arch-box accent">Transaction Ingest<br><span style="font-size:10px">weekly category totals</span></div>
           <div class="arch-arrow">→</div>
-          <div class="arch-box green">log_agent<br><span style="font-size:10px">get_weekly_transactions<br>append_spending_snapshot<br>output_key="log_updated"</span></div>
+          <div class="arch-box green">log_agent<br><span style="font-size:10px">get_weekly_transactions_with_input<br>append_spending_snapshot<br>output_key="log_updated"</span></div>
           <div class="arch-arrow">→</div>
           <div class="arch-box yellow">coaching_agent<br><span style="font-size:10px">check_trend_and_suppression<br>record_suggestion_response<br>output_key="coaching_result"</span></div>
         </div>
@@ -2439,7 +2439,7 @@ _SESSION_LAST_CUSTOMER: dict[tuple[str, str], str] = {}
       </div>
 
       <div class="concept yellow" data-label="New Pattern">
-        <p style="margin:0"><strong>Stateful Suppression</strong> — <span class="ic">check_trend_and_suppression</span> reads two keys from <span class="ic">session.state</span>: the spending log and the suggestion history. It applies a 30-day cooling-off rule deterministically. The LLM only sees the suppress/proceed result as a tool return — it never evaluates the date arithmetic itself.</p>
+        <p style="margin:0"><strong>Stateful Suppression</strong> — <span class="ic">check_trend_and_suppression</span> reads two keys from <span class="ic">session.state</span>: the spending log and the suggestion history. It applies a 30-day cooling-off rule deterministically. The LLM only sees the suppress/proceed result as a tool return — it never evaluates the date arithmetic itself. <span class="ic">append_spending_snapshot</span> uses upsert semantics keyed on <span class="ic">(customer_id, week)</span>, so re-running the same simulation week always updates the existing entry rather than creating a duplicate that would prevent the strictly-increasing trend condition from firing.</p>
       </div>
 
       <h3>Build Steps</h3>
@@ -2456,14 +2456,14 @@ _SESSION_LAST_CUSTOMER: dict[tuple[str, str], str] = {}
           <div class="step-num" style="background:var(--accent3);color:var(--bg);">2</div>
           <div class="step-body">
             <strong>Implement four tools in <span class="ic">tools.py</span></strong>
-            <p><span class="ic">get_weekly_transactions</span> — returns mock weekly snapshot. <span class="ic">append_spending_snapshot</span> — uses <span class="ic">ToolContext</span> to append to <span class="ic">session.state["spending_log"]</span>. <span class="ic">check_trend_and_suppression</span> — reads log + suggestion history, computes trend and suppress flag deterministically. <span class="ic">record_suggestion_response</span> — writes customer's "accepted" / "declined" / "not_now" to <span class="ic">session.state["suggestion_history"]</span>.</p>
+            <p><span class="ic">get_weekly_transactions_with_input</span> — returns seeded weekly snapshot or caller-supplied simulation data (<span class="ic">week/category/amount</span>). <span class="ic">append_spending_snapshot</span> — <strong>upserts</strong> by <span class="ic">(customer_id, week)</span> into <span class="ic">session.state["spending_log"]</span>; re-running the same week updates the existing entry instead of duplicating it, so the trend check always sees unique, correctly-ordered amounts. <span class="ic">check_trend_and_suppression</span> — reads log + suggestion history, computes trend and suppress flag deterministically. <span class="ic">record_suggestion_response</span> — writes customer's "accepted" / "declined" / "not_now" to <span class="ic">session.state["suggestion_history"]</span>.</p>
           </div>
         </div>
         <div class="step">
           <div class="step-num" style="background:var(--accent3);color:var(--bg);">3</div>
           <div class="step-body">
             <strong>Build the two-stage <span class="ic">SequentialAgent</span> in <span class="ic">agent.py</span></strong>
-            <p><span class="ic">log_agent</span> calls <span class="ic">get_weekly_transactions</span> then <span class="ic">append_spending_snapshot</span>, writes <span class="ic">output_key="log_updated"</span>. <span class="ic">coaching_agent</span> reads <span class="ic">{log_updated}</span> from state, calls <span class="ic">check_trend_and_suppression</span>, and conditionally frames a suggestion. <span class="ic">SequentialAgent</span> wraps both.</p>
+            <p><span class="ic">log_agent</span> calls <span class="ic">get_weekly_transactions_with_input</span> then <span class="ic">append_spending_snapshot</span>, writes <span class="ic">output_key="log_updated"</span>. <span class="ic">coaching_agent</span> reads <span class="ic">{log_updated}</span> from state, calls <span class="ic">check_trend_and_suppression</span>, and conditionally frames a suggestion. <span class="ic">SequentialAgent</span> wraps both.</p>
           </div>
         </div>
         <div class="step">
@@ -2477,7 +2477,7 @@ _SESSION_LAST_CUSTOMER: dict[tuple[str, str], str] = {}
           <div class="step-num" style="background:var(--accent3);color:var(--bg);">5</div>
           <div class="step-body">
             <strong>Run the three teaching scenarios</strong>
-            <p>Run CUST-3001 three times to show trend detection accumulating and firing. Run CUST-3002 to show stable spend producing no suggestion. Pre-populate CUST-3003's <span class="ic">suggestion_history</span> with a declined entry dated within 30 days — show suppression firing even when the trend is real. After each run, print the full <span class="ic">session.state</span> so students can see every key the DB has retained.</p>
+            <p>Run CUST-3001 three times to show trend detection accumulating and firing. Run CUST-3002 to show stable spend producing no suggestion. Pre-populate CUST-3003's <span class="ic">suggestion_history</span> with a declined entry dated within 30 days — show suppression firing even when the trend is real. After a suggestion appears, run a fourth turn with <span class="ic">--response accepted</span> (or <span class="ic">declined</span> / <span class="ic">not_now</span>) or <span class="ic">customer_response</span> in the API body so <span class="ic">record_suggestion_response</span> updates history. After each run, print the full <span class="ic">session.state</span> so students can see every key the DB has retained.</p>
           </div>
         </div>
       </div>
@@ -2496,7 +2496,7 @@ _MOCK_TRANSACTIONS = {
     <span class="st">"CUST-3003"</span>: [{<span class="st">"week"</span>:<span class="st">"W10"</span>,<span class="st">"category"</span>:<span class="st">"grocery"</span>,<span class="st">"amount"</span>:<span class="nm">190</span>},{<span class="st">"week"</span>:<span class="st">"W11"</span>,<span class="st">"category"</span>:<span class="st">"grocery"</span>,<span class="st">"amount"</span>:<span class="nm">260</span>},{<span class="st">"week"</span>:<span class="st">"W12"</span>,<span class="st">"category"</span>:<span class="st">"grocery"</span>,<span class="st">"amount"</span>:<span class="nm">330</span>}],
 }
 
-<span class="kw">def</span> <span class="fn">get_weekly_transactions</span>(customer_id: <span class="cl">str</span>) -> <span class="cl">dict</span>:
+<span class="kw">def</span> <span class="fn">get_weekly_transactions_with_input</span>(customer_id: <span class="cl">str</span>) -> <span class="cl">dict</span>:
     <span class="dc">"""Return the latest weekly spending snapshot for a customer."""</span>
     rows = _MOCK_TRANSACTIONS.<span class="fn">get</span>(customer_id, [])
     <span class="kw">return</span> {<span class="st">"customer_id"</span>: customer_id, <span class="st">"latest"</span>: rows[-<span class="nm">1</span>] <span class="kw">if</span> rows <span class="kw">else</span> {}, <span class="st">"all_weeks"</span>: rows}
@@ -2505,12 +2505,20 @@ _MOCK_TRANSACTIONS = {
     customer_id: <span class="cl">str</span>, week: <span class="cl">str</span>, category: <span class="cl">str</span>, amount: <span class="cl">float</span>,
     tool_context: <span class="cl">ToolContext</span>   <span class="cm"># ADK injects — LLM never sees this</span>
 ) -> <span class="cl">dict</span>:
-    <span class="dc">"""Append a weekly spending snapshot to session.state['spending_log']."""</span>
+    <span class="dc">"""Upsert a weekly snapshot — update existing (customer_id, week) entry or append new."""</span>
     log = tool_context.state.<span class="fn">get</span>(<span class="st">"spending_log"</span>, [])
-    log.<span class="fn">append</span>({<span class="st">"week"</span>: week, <span class="st">"category"</span>: category,
-                <span class="st">"amount"</span>: amount, <span class="st">"recorded_at"</span>: datetime.utcnow().<span class="fn">isoformat</span>()})
+    entry = {<span class="st">"customer_id"</span>: customer_id, <span class="st">"week"</span>: week,
+             <span class="st">"category"</span>: category, <span class="st">"amount"</span>: <span class="fn">float</span>(amount),
+             <span class="st">"recorded_at"</span>: datetime.<span class="fn">now</span>(UTC).<span class="fn">isoformat</span>()}
+    idx = <span class="fn">next</span>((i <span class="kw">for</span> i, r <span class="kw">in</span> <span class="fn">enumerate</span>(log)
+                 <span class="kw">if</span> r.<span class="fn">get</span>(<span class="st">"customer_id"</span>) == customer_id <span class="kw">and</span> r.<span class="fn">get</span>(<span class="st">"week"</span>) == week), <span class="kw">None</span>)
+    <span class="kw">if</span> idx <span class="kw">is not None</span>:
+        log[idx] = entry; action = <span class="st">"updated"</span>
+    <span class="kw">else</span>:
+        log.<span class="fn">append</span>(entry); action = <span class="st">"appended"</span>
     tool_context.state[<span class="st">"spending_log"</span>] = log
-    <span class="kw">return</span> {<span class="st">"appended"</span>: <span class="nm">True</span>, <span class="st">"log_length"</span>: <span class="fn">len</span>(log)}
+    <span class="kw">return</span> {<span class="st">"appended"</span>: <span class="nm">True</span>, <span class="st">"upsert_action"</span>: action,
+            <span class="st">"log_length_total"</span>: <span class="fn">len</span>(log)}
 
 <span class="kw">def</span> <span class="fn">check_trend_and_suppression</span>(customer_id: <span class="cl">str</span>, tool_context: <span class="cl">ToolContext</span>) -> <span class="cl">dict</span>:
     <span class="dc">"""Deterministic guard — never calls an LLM. Returns trend + suppress flags."""</span>
@@ -2551,16 +2559,16 @@ _MOCK_TRANSACTIONS = {
         </div>
         <pre><code><span class="kw">from</span> google.adk.agents <span class="kw">import</span> <span class="cl">LlmAgent</span>, <span class="cl">SequentialAgent</span>
 <span class="kw">from</span> google.adk.models.lite_llm <span class="kw">import</span> <span class="cl">LiteLlm</span>
-<span class="kw">from</span> .tools <span class="kw">import</span> (get_weekly_transactions, append_spending_snapshot,
+<span class="kw">from</span> .tools <span class="kw">import</span> (get_weekly_transactions_with_input, append_spending_snapshot,
                    check_trend_and_suppression, record_suggestion_response)
 
 llm = <span class="cl">LiteLlm</span>(model=<span class="st">"anthropic/claude-sonnet-4-5"</span>)
 
 log_agent = <span class="cl">LlmAgent</span>(
     name=<span class="st">"log_agent"</span>, model=llm,
-    instruction=(<span class="st">"Call get_weekly_transactions for {customer_id}. "</span>
+    instruction=(<span class="st">"Call get_weekly_transactions_with_input for {customer_id}. "</span>
                  <span class="st">"Then call append_spending_snapshot. Confirm the snapshot was recorded."</span>),
-    tools=[get_weekly_transactions, append_spending_snapshot],
+    tools=[get_weekly_transactions_with_input, append_spending_snapshot],
     output_key=<span class="st">"log_updated"</span>,
 )
 

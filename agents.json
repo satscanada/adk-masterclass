@@ -118,7 +118,7 @@
       "key": "spending_pattern_coach_14a",
       "title": "Spending Pattern Coach — PostgreSQL (Module 14A)",
       "description": "Module 14A: persistent spending trend coaching with deterministic 30-day suppression logic, backed by PostgreSQL DatabaseSessionService.",
-      "prompt_hint": "Try CUST-3001, CUST-3002, or CUST-3003. Add accepted/declined/not_now to record response.",
+      "prompt_hint": "Try CUST-3001 (run a few times to build the log), CUST-3002, or CUST-3003. To record a reply to a suggestion, include accepted, declined, or not_now in your message. For JSON fields (week, amount, customer_response), use the standalone Module 14A API (db_persist/14A/api_app.py).",
       "module": "db_persist.14A.main",
       "suggestions": [
         {"label": "CUST-3001 — rising dining trend", "prompt": "CUST-3001"},

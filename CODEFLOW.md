@@ -726,7 +726,7 @@ This file defines Module 14A deterministic tools for persistent spending coachin
 It:
 
 - provides mock weekly category snapshots for `CUST-3001`, `CUST-3002`, `CUST-3003`
-- appends each run to `session.state["spending_log"]`
+- upserts each run into `session.state["spending_log"]` keyed by `(customer_id, week)` — re-running the same week updates the existing entry rather than duplicating it (duplicate amounts would break the strictly-increasing trend check)
 - evaluates rising-trend + 30-day cooling-window suppression from `session.state["suggestion_history"]`
 - records customer response events (`accepted`, `declined`, `not_now`)
 
@@ -751,7 +751,9 @@ This file runs Module 14A with PostgreSQL-backed sessions.
 
 It:
 
-- defaults `MODULE14A_DB_URL` to `postgresql+asyncpg://postgres:postgres@127.0.0.1:6432/adk_sessions`
+- defaults `MODULE14A_DB_URL` to `postgresql+asyncpg://postgres:postgres@127.0.0.1:6433/adk_sessions`
+- sets `connect_args={"server_settings":{"search_path": MODULE14A_DB_SCHEMA}}` (default `adk_module14a`)
+- supports optional simulation overrides from CLI/API (`week`, `category`, `amount`) and optional suggestion reply (`customer_response` or `--response`, or a keyword in the prompt; explicit values win over prompt text)
 - creates or resumes a stable customer session (`spending-coach-<customer_id>`)
 - seeds `CUST-3003` with a recent declined suggestion to demo suppression
 - runs the two-stage pipeline and returns a persistence banner + final text
@@ -765,7 +767,7 @@ This file exposes Module 14A through a standalone FastAPI app.
 It:
 
 - exposes `GET /health`
-- exposes `POST /chat` with `prompt`, `user_id`, and optional `session_id`
+- exposes `POST /chat` with `prompt`, `user_id`, optional `session_id`, optional `week` / `category` / `amount`, and optional `customer_response` (`accepted` | `declined` | `not_now`)
 - invokes `run_prompt(...)` from `db_persist/14A/main.py`
 
 Think of this file as: "dedicated API shell for Module 14A."
@@ -1505,10 +1507,10 @@ Command:
 What happens:
 
 1. Python starts `db_persist/14A/main.py`.
-2. `DatabaseSessionService` connects to PostgreSQL (default `127.0.0.1:6432`, override with `MODULE14A_DB_URL`).
-3. A stable session ID (`spending-coach-<customer_id>`) is created or resumed.
-4. `spending_log_agent` calls `get_weekly_transactions` then `append_spending_snapshot`.
-5. `spending_coaching_agent` calls `check_trend_and_suppression` and optionally `record_suggestion_response`.
+2. `DatabaseSessionService` connects to PostgreSQL (default `127.0.0.1:6433`, override with `MODULE14A_DB_URL`) and applies `search_path` to `MODULE14A_DB_SCHEMA` (default `adk_module14a`).
+3. A stable session ID (`spending-coach-<customer_id>`) is created or resumed, and effective user identity is customer-scoped by default (`customer::<customer_id>`).
+4. `spending_log_agent` calls `get_weekly_transactions_with_input` (custom `week/category/amount` when supplied) then `append_spending_snapshot`.
+5. `spending_coaching_agent` calls `check_trend_and_suppression` and, when a reply is supplied (`customer_response`, `--response`, or keyword in the prompt), `record_suggestion_response`.
 6. ADK persists updated `session.state` rows in PostgreSQL for the next run.
 
 Short version:

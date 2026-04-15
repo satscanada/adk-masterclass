@@ -25,6 +25,7 @@ This file is the **markdown companion** to the in-app Help panel in the React UI
 | 12 A2A CD Ladder | `a2a_agent` | Local banking assistant delegates CD ladder planning to a remote fixed-income specialist via Agent Card discovery and A2A task polling, with fallback mini-ladder if the peer is unavailable. | `POST /api/chat` |
 | 13 Retail Deposit Banking | `retail_deposit_banking_agent` | Simple `SequentialAgent` lesson use case: intake snapshot, risk snapshot, and offer recommendation for retail deposit onboarding using mock customer data. | `POST /api/chat` |
 | 14 Retail Deposit Banking (DB sessions) | `retail_deposit_banking_db_agent` | Same pipeline as Module 13 with `DatabaseSessionService` — ADK sessions and event history persist across API restarts (default SQLite file under `db_persist/14/`). | `POST /api/chat` |
+| 14A Spending Pattern Coach (PostgreSQL) | `spending_pattern_coach_14a` | Two-stage persistent coaching pipeline (`spending_log_agent` -> `spending_coaching_agent`) with deterministic trend+suppress guards, optional snapshot overrides (`week`, `category`, `amount`), and optional suggestion replies (`accepted` / `declined` / `not_now` via CLI `--response`, standalone API `customer_response`, `run_14a_api.sh` 7th arg, or keyword in prompt). | `POST /api/chat` |
 
 ### Module 01 — Single Agent
 
@@ -133,6 +134,22 @@ This file is the **markdown companion** to the in-app Help panel in the React UI
 - **Database URL:** `MODULE14_DB_URL` (optional). Default is a file `module14_sessions.db` next to `db_persist/14/main.py`, using an async SQLite URL: `sqlite+aiosqlite:///…` (required form for SQLAlchemy’s asyncio engine).
 - **Customer ID continuity:** Same in-process `(user_id, session_id) -> last customer` map as Module 13 for prompts that omit `RET-####` on follow-up turns; ADK conversation persistence is database-backed regardless.
 - **UI:** `agents.json` key `retail_deposit_banking_db_agent`, same Quick start chips as Module 13.
+
+### Module 14A — Persistent spending coach (PostgreSQL)
+
+- **Python package:** `db_persist/14A/` (import path `db_persist.14A.main`)
+- **Entry:** `db_persist.14A.main:run_prompt` (blocking)
+- **Pattern:** `SequentialAgent` with two stages:
+  - `spending_log_agent`: reads baseline mock trend and appends one snapshot to `session.state["spending_log"]`
+  - `spending_coaching_agent`: calls deterministic guard tools to decide trend detection and suppression before composing customer-facing advice
+- **Tools:** `get_weekly_transactions_with_input`, `append_spending_snapshot`, `check_trend_and_suppression`, `record_suggestion_response`
+- **Database/session behavior:** PostgreSQL-backed `DatabaseSessionService`, schema-scoped via `MODULE14A_DB_SCHEMA` (default `adk_module14a`), and customer-scoped effective user IDs by default (`MODULE14A_SESSION_SCOPE=customer`).
+- **Simulation inputs:** the CLI and the **standalone** Module 14A FastAPI (`POST /chat` on port 8740 by default) accept optional `week`, `category`, and `amount`. The shared app `POST /api/chat` only forwards `prompt` / `user_id` / `session_id`, so use the prompt text for customer id (and optional reply keywords) when using the React UI.
+- **Suggestion replies:** `accepted` | `declined` | `not_now` — CLI `--response`, keyword in the prompt (works with shared UI and CLI), standalone `POST /chat` JSON field `customer_response`, or seventh positional argument to `run_14a_api.sh` (after `amount`). Explicit `--response` / `customer_response` overrides any keyword in the prompt.
+- **Standalone API scripts:** `db_persist/14A/run_14a_api_server.sh` and `db_persist/14A/run_14a_api.sh`. Examples:
+  - `./db_persist/14A/run_14a_api.sh CUST-3001 api-user spending-coach-cust-3001 2026-W21 travel 455.25`
+  - `./db_persist/14A/run_14a_api.sh CUST-3001 api-user spending-coach-cust-3001 2026-W21 travel 455.25 accepted`
+- **UI:** registered in `agents.json` as `spending_pattern_coach_14a` for shared API/React usage.
 
 ## Adding a new agent or module
 
