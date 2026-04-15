@@ -26,6 +26,7 @@ This project now has 23 main parts:
 - `a2a_agent/`: Module 12 — local banking assistant that delegates CD ladder planning to a remote fixed-income specialist via Agent Card + A2A tasks
 - `retail_deposit_banking_agent/`: Module 13 — simple retail deposit banking use case (intake → risk → recommendation)
 - `db_persist/14/`: Module 14 — same retail use case with `DatabaseSessionService` (default SQLite under `db_persist/14/`)
+- `db_persist/14A/`: Module 14A — PostgreSQL-backed spending pattern coach with deterministic suppression logic
 - `agents.json`: the list of agents shown in the UI
 - `agent_registry.py`: a small registry that lists available agents
 - `api_app.py`: the shared HTTP API for external clients
@@ -88,14 +89,19 @@ If you are a beginner, read the files in this order:
 44. `retail_deposit_banking_agent/main.py`
 45. `retail_deposit_banking_agent/README.md`
 46. `db_persist/14/main.py`
-47. `tests/agent_registry_smoke_test.py`
-48. `tests/smoke_test.py`
-49. `tests/mulit_agent_smoke_test.py`
-50. `tests/orchestrate_agent_smoke_test.py`
-51. `tests/multi_agent_banking_smoke_test.py`
-52. `tests/mcp_server_loader_smoke_test.py`
-53. `tests/mcp_server_mock_payload_test.py`
-54. `tests/api_smoke_test.py`
+47. `db_persist/14A/tools.py`
+48. `db_persist/14A/agent.py`
+49. `db_persist/14A/main.py`
+50. `db_persist/14A/api_app.py`
+51. `db_persist/14A/guide.md`
+52. `tests/agent_registry_smoke_test.py`
+53. `tests/smoke_test.py`
+54. `tests/mulit_agent_smoke_test.py`
+55. `tests/orchestrate_agent_smoke_test.py`
+56. `tests/multi_agent_banking_smoke_test.py`
+57. `tests/mcp_server_loader_smoke_test.py`
+58. `tests/mcp_server_mock_payload_test.py`
+59. `tests/api_smoke_test.py`
 
 That order goes from simple configuration to the full app flow.
 
@@ -208,6 +214,14 @@ adk-masterclass/
 │   │   ├── __init__.py
 │   │   └── main.py
 │   ├── 14A/
+│   │   ├── __init__.py
+│   │   ├── tools.py
+│   │   ├── agent.py
+│   │   ├── main.py
+│   │   ├── api_app.py
+│   │   ├── run_14a_api_server.sh
+│   │   ├── run_14a_api.sh
+│   │   └── guide.md
 │   ├── 14B/
 │   └── 14C/
 └── simple_litellm_agent/
@@ -704,6 +718,57 @@ It:
 - reuses the Module 13 customer-ID resolution and `run_prompt(...)` contract for `POST /api/chat`
 
 Think of this file as: "retail sequential runner with durable ADK session storage."
+
+### `db_persist/14A/tools.py`
+
+This file defines Module 14A deterministic tools for persistent spending coaching.
+
+It:
+
+- provides mock weekly category snapshots for `CUST-3001`, `CUST-3002`, `CUST-3003`
+- appends each run to `session.state["spending_log"]`
+- evaluates rising-trend + 30-day cooling-window suppression from `session.state["suggestion_history"]`
+- records customer response events (`accepted`, `declined`, `not_now`)
+
+Think of this file as: "state mutation + guard logic, no LLM arithmetic."
+
+### `db_persist/14A/agent.py`
+
+This file builds the Module 14A two-stage `SequentialAgent`.
+
+It:
+
+- uses the same Module 07 LiteLLM connection pattern via `_build_llm(settings)`
+- defines `spending_log_agent` to fetch + append the latest snapshot
+- defines `spending_coaching_agent` to call guard tools and frame the coaching output
+- stores stage outputs with `output_key` for cross-stage context
+
+Think of this file as: "persistent spending coach pipeline."
+
+### `db_persist/14A/main.py`
+
+This file runs Module 14A with PostgreSQL-backed sessions.
+
+It:
+
+- defaults `MODULE14A_DB_URL` to `postgresql+asyncpg://postgres:postgres@127.0.0.1:6432/adk_sessions`
+- creates or resumes a stable customer session (`spending-coach-<customer_id>`)
+- seeds `CUST-3003` with a recent declined suggestion to demo suppression
+- runs the two-stage pipeline and returns a persistence banner + final text
+
+Think of this file as: "durable spending coach runtime."
+
+### `db_persist/14A/api_app.py`
+
+This file exposes Module 14A through a standalone FastAPI app.
+
+It:
+
+- exposes `GET /health`
+- exposes `POST /chat` with `prompt`, `user_id`, and optional `session_id`
+- invokes `run_prompt(...)` from `db_persist/14A/main.py`
+
+Think of this file as: "dedicated API shell for Module 14A."
 
 ### `agents.json`
 
@@ -1427,6 +1492,29 @@ Short version:
 
 ```text
 terminal or chat UI -> db_persist/14/main.py -> DatabaseSessionService -> SequentialAgent(same as Module 13) -> final recommendation
+```
+
+### Flow 18: Run the Module 14A spending coach with PostgreSQL persistence
+
+Command:
+
+```bash
+./.venv/bin/python -m db_persist.14A.main CUST-3001
+```
+
+What happens:
+
+1. Python starts `db_persist/14A/main.py`.
+2. `DatabaseSessionService` connects to PostgreSQL (default `127.0.0.1:6432`, override with `MODULE14A_DB_URL`).
+3. A stable session ID (`spending-coach-<customer_id>`) is created or resumed.
+4. `spending_log_agent` calls `get_weekly_transactions` then `append_spending_snapshot`.
+5. `spending_coaching_agent` calls `check_trend_and_suppression` and optionally `record_suggestion_response`.
+6. ADK persists updated `session.state` rows in PostgreSQL for the next run.
+
+Short version:
+
+```text
+terminal or curl -> db_persist/14A/main.py -> PostgreSQL DatabaseSessionService -> SequentialAgent(log -> coaching) -> persistent stateful coaching
 ```
 
 ## The Core Relationship Between Files

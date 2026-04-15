@@ -4,7 +4,7 @@ This project shows a small but useful **Google Agent Development Kit (ADK)** lea
 
 It now includes:
 
-- the Python agent modules (including Module 06: a `BaseAgent` keyword router in `custom_agent/`, Module 07: a multi-agent business banking pipeline in `multi_agent_banking/`, Module 08: workflow orchestration patterns in `workflow_agent/`, Module 09: function-tool patterns in `function_tools_agent/`, Module 10: MCP client + Redis banking memory in `mcp_client/`, Module 11: a custom OpenAPI-backed MCP server in `mcp_server/`, Module 12: Agent-to-Agent CD ladder delegation in `a2a_agent/`, Module 13: a simple retail-deposit banking use case in `retail_deposit_banking_agent/`, and Module 14: the same retail flow with `DatabaseSessionService` under `db_persist/14/`)
+- the Python agent modules (including Module 06: a `BaseAgent` keyword router in `custom_agent/`, Module 07: a multi-agent business banking pipeline in `multi_agent_banking/`, Module 08: workflow orchestration patterns in `workflow_agent/`, Module 09: function-tool patterns in `function_tools_agent/`, Module 10: MCP client + Redis banking memory in `mcp_client/`, Module 11: a custom OpenAPI-backed MCP server in `mcp_server/`, Module 12: Agent-to-Agent CD ladder delegation in `a2a_agent/`, Module 13: a simple retail-deposit banking use case in `retail_deposit_banking_agent/`, Module 14: the same retail flow with `DatabaseSessionService` under `db_persist/14/`, and Module 14A: a PostgreSQL-backed spending pattern coach under `db_persist/14A/`)
 - a FastAPI layer that exposes those agents over HTTP
 - the original Streamlit UI
 - a React + Vite + Tailwind chat UI that talks to the API
@@ -140,6 +140,14 @@ adk-masterclass/
 │   │   ├── __init__.py
 │   │   └── main.py
 │   ├── 14A/
+│   │   ├── __init__.py
+│   │   ├── tools.py
+│   │   ├── agent.py
+│   │   ├── main.py
+│   │   ├── api_app.py
+│   │   ├── run_14a_api_server.sh
+│   │   ├── run_14a_api.sh
+│   │   └── guide.md
 │   ├── 14B/
 │   └── 14C/
 └── simple_litellm_agent/
@@ -296,6 +304,24 @@ Keep **`AGENT_HELP.md`** and **`agentHelp.js`** aligned whenever you add or rena
 
 - `db_persist/14/main.py`
   - Module 14: same retail `SequentialAgent` as Module 13, registered as `retail_deposit_banking_db_agent`, with `DatabaseSessionService` (default `sqlite+aiosqlite` file beside this module; override with `MODULE14_DB_URL`).
+
+- `db_persist/14A/tools.py`
+  - Module 14A: deterministic spending-coach tools that append `spending_log`, evaluate rising trend + 30-day suppression, and persist `suggestion_history` using `ToolContext`.
+
+- `db_persist/14A/agent.py`
+  - Module 14A: two-stage `SequentialAgent` (`spending_log_agent` -> `spending_coaching_agent`) using the same LiteLLM connection pattern as Module 07 (`_build_llm(settings)` with token floor).
+
+- `db_persist/14A/main.py`
+  - Module 14A runtime: `DatabaseSessionService` backed by PostgreSQL (`localhost:6432` default via `MODULE14A_DB_URL`), stable customer session IDs, and seeded suppression history for demo customer `CUST-3003`.
+
+- `db_persist/14A/api_app.py`
+  - Standalone FastAPI wrapper (`GET /health`, `POST /chat`) for Module 14A.
+
+- `db_persist/14A/run_14a_api_server.sh` and `db_persist/14A/run_14a_api.sh`
+  - Helper scripts to start the standalone Module 14A API and invoke it through curl.
+
+- `db_persist/14A/guide.md`
+  - Module-local guide for setup, Docker Postgres on `6432`, quick tests, and Mermaid sequence flow.
 
 - `agents.json`
   - Stores the agent list for the UI
@@ -750,6 +776,48 @@ cd /Users/sathishkr/PycharmProjects/adk-masterclass
 ```
 
 In the React UI, pick **Retail Deposit Banking — DB sessions (Module 14)** (or send `agent_key` `retail_deposit_banking_db_agent` via `POST /api/chat`).
+
+## Run persistent spending coach (Module 14A — PostgreSQL)
+
+Module 14A implements a stateful spending-pattern coach. Each run appends one weekly snapshot to `session.state["spending_log"]`, then a deterministic guard tool checks trend + suppression (declined suggestion within 30 days) before the coaching stage formats customer-facing guidance.
+
+Start PostgreSQL on Docker localhost `6432`:
+
+```bash
+docker run --name module14a-postgres --rm \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=adk_sessions \
+  -p 6432:5432 \
+  -d postgres:16
+```
+
+Run Module 14A directly:
+
+```bash
+cd /Users/sathishkr/PycharmProjects/adk-masterclass
+./.venv/bin/python -m db_persist.14A.main CUST-3001
+./.venv/bin/python -m db_persist.14A.main CUST-3002
+./.venv/bin/python -m db_persist.14A.main CUST-3003
+```
+
+Standalone Module 14A FastAPI + curl:
+
+```bash
+cd /Users/sathishkr/PycharmProjects/adk-masterclass
+chmod +x db_persist/14A/run_14a_api_server.sh db_persist/14A/run_14a_api.sh
+./db_persist/14A/run_14a_api_server.sh
+```
+
+In another terminal:
+
+```bash
+cd /Users/sathishkr/PycharmProjects/adk-masterclass
+./db_persist/14A/run_14a_api.sh CUST-3001
+./db_persist/14A/run_14a_api.sh "CUST-3001 declined" curl-user spending-coach-cust-3001
+```
+
+Shared API/UI agent key: `spending_pattern_coach_14a` (`module`: `db_persist.14A.main`).
 
 ## Run the API
 

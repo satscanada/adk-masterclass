@@ -113,6 +113,18 @@
         {"label": "RET-3101 — healthy profile", "prompt": "RET-3101"},
         {"label": "RET-4420 — higher-risk profile", "prompt": "RET-4420"}
       ]
+    },
+    {
+      "key": "spending_pattern_coach_14a",
+      "title": "Spending Pattern Coach — PostgreSQL (Module 14A)",
+      "description": "Module 14A: persistent spending trend coaching with deterministic 30-day suppression logic, backed by PostgreSQL DatabaseSessionService.",
+      "prompt_hint": "Try CUST-3001, CUST-3002, or CUST-3003. Add accepted/declined/not_now to record response.",
+      "module": "db_persist.14A.main",
+      "suggestions": [
+        {"label": "CUST-3001 — rising dining trend", "prompt": "CUST-3001"},
+        {"label": "CUST-3002 — stable spend pattern", "prompt": "CUST-3002"},
+        {"label": "CUST-3003 — suppression scenario", "prompt": "CUST-3003"}
+      ]
     }
   ]
 }
