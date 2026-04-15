@@ -93,14 +93,14 @@
       ]
     },
     {
-      "key": "retail_deposit_api_agent",
-      "title": "Retail Deposit API Agent (sequential)",
-      "description": "Module 26: Sequential retail deposit workflow with intake, risk, and decision stages that returns strict JSON output for API consumption.",
-      "prompt_hint": "Send a customer ID like RET-3101 or RET-4420. The final response is JSON.",
-      "module": "retail_deposit_api_agent.main",
+      "key": "retail_deposit_banking_agent",
+      "title": "Retail Deposit Banking (Module 13)",
+      "description": "Module 13: in-memory session management use case with a retail deposit SequentialAgent pipeline (intake, risk, offer) and session-level customer context reuse.",
+      "prompt_hint": "Turn 1: send RET-3101 or RET-4420. Follow-up turns can omit customer ID if you keep the same session.",
+      "module": "retail_deposit_banking_agent.main",
       "suggestions": [
-        {"label": "Healthy customer (expected APPROVED)", "prompt": "RET-3101"},
-        {"label": "Higher-risk customer (expected REVIEW_REQUIRED)", "prompt": "RET-4420"}
+        {"label": "RET-3101 — healthy profile", "prompt": "RET-3101"},
+        {"label": "RET-4420 — higher-risk profile", "prompt": "RET-4420"}
       ]
     }
   ]

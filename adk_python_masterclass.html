@@ -342,6 +342,14 @@
   pre::-webkit-scrollbar-track { background: var(--code-bg); }
   pre::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
+  /* Mermaid: source uses pre.mermaid; after render, SVG replaces text inside pre */
+  pre.mermaid svg {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 8px auto 0;
+  }
+
   code { font-family: 'JetBrains Mono', monospace; color: var(--text); }
 
   .kw { color: #ff79c6; }
@@ -628,7 +636,7 @@
   <a class="nav-item" href="#memory-architectures"><span class="nav-num">23</span> Agent Memory Architectures</a>
   <a class="nav-item" href="#multi-agent-learning"><span class="nav-num">24</span> Multi-Agent Learning</a>
   <a class="nav-item" href="#production-patterns"><span class="nav-num">25</span> Production Patterns</a>
-  <a class="nav-item" href="#sequential-api-workflow"><span class="nav-num">26</span> Sequential API Workflow</a>
+  <a class="nav-item" href="#sequential-api-workflow"><span class="nav-num">13U</span> In-Memory Session Use Case</a>
 
   <div class="nav-section">Model</div>
   <a class="nav-item" href="#litellm-ref"><span class="nav-num">↳</span> LiteLLM Reference</a>
@@ -2190,47 +2198,89 @@ async def build_cd_ladder(customer_id: str) -&gt; dict:
         </div>
       </div>
 
-      <p><span class="ic">InMemorySessionService</span> stores all sessions in RAM. Sessions are lost on process restart. Use it for development, testing, and stateless microservices. The API is identical to <span class="ic">DatabaseSessionService</span> — swapping them is a one-line change.</p>
+      <p><span class="ic">InMemorySessionService</span> stores all sessions in RAM. Sessions are lost on process restart. In this repo, Module 13 applies that directly to a retail-deposit workflow: first turn provides customer ID, follow-up turns can reuse the same <span class="ic">session_id</span> and omit customer ID while context is still in memory. The API is identical to <span class="ic">DatabaseSessionService</span> — swapping storage is still a one-line change.</p>
 
       <div class="code-wrapper">
         <div class="code-header">
-          <div class="code-filename">module_13_in_memory_session.py</div>
+          <div class="code-filename">Module 13 code flow (in-memory session continuity)</div>
+          <span class="code-lang">MERMAID</span>
+        </div>
+        <pre class="mermaid">sequenceDiagram
+    autonumber
+    participant U as User_UI
+    participant API as FastAPI_api_app
+    participant M13 as retail_deposit_main
+    participant MEM as session_customer_map
+    participant RUN as Runner_InMemorySession
+    participant SEQ as SequentialAgent
+    participant TOOLS as workflow_tools
+
+    U->>API: POST /api/chat agent_key prompt user_id session_id
+    API->>M13: run_prompt
+
+    alt prompt includes RET customer id
+        M13->>MEM: store customer for user session key
+    else follow-up without customer id
+        M13->>MEM: load remembered customer
+        MEM-->>M13: customer id or empty
+        M13->>M13: inject customer_id into prompt
+    end
+
+    M13->>RUN: runner.run with same session_id
+    RUN->>SEQ: intake then risk then offer
+    SEQ->>TOOLS: profile deposits aml velocity offer
+    TOOLS-->>SEQ: tool payloads
+    SEQ-->>RUN: markdown recommendation
+    RUN-->>M13: ADK events
+    M13-->>API: banner plus final text
+    API-->>U: JSON response
+</pre>
+      </div>
+
+      <p style="font-size:13px;color:var(--text-muted);margin-top:-8px;margin-bottom:8px;max-width:900px;">The diagram above is rendered by <strong>Mermaid.js</strong> loaded from jsDelivr. You need a network connection the first time. If you still see raw <span class="ic">sequenceDiagram</span> text, open this page over <span class="ic">http://localhost</span> instead of <span class="ic">file://</span>, or check the browser console for blocked scripts.</p>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <div class="code-filename">retail_deposit_banking_agent/main.py (actual Module 13 pattern)</div>
           <span class="code-lang">PYTHON</span>
         </div>
-        <pre><code><span class="kw">from</span> google.adk.sessions <span class="kw">import</span> <span class="cl">InMemorySessionService</span>
+        <pre><code><span class="kw">from</span> functools <span class="kw">import</span> lru_cache
+<span class="kw">from</span> google.adk.sessions <span class="kw">import</span> <span class="cl">InMemorySessionService</span>
+<span class="kw">from</span> google.adk.runners <span class="kw">import</span> <span class="cl">Runner</span>
 
-session_service = <span class="cl">InMemorySessionService</span>()
+_SESSION_LAST_CUSTOMER: dict[tuple[str, str], str] = {}
 
-<span class="cm"># Create session with initial state</span>
-session = <span class="kw">await</span> session_service.<span class="fn">create_session</span>(
-    app_name=<span class="st">"memory_app"</span>,
-    user_id=<span class="st">"student_001"</span>,
-    state={<span class="st">"session_type"</span>: <span class="st">"in_memory"</span>, <span class="st">"turn_count"</span>: <span class="nm">0</span>},
-)
+@lru_cache(maxsize=<span class="nm">1</span>)
+<span class="kw">def</span> <span class="fn">build_runner</span>() -> <span class="cl">Runner</span>:
+    <span class="kw">return</span> <span class="cl">Runner</span>(
+        agent=create_agent(settings),
+        app_name=<span class="st">"module13_retail_deposit"</span>,
+        session_service=<span class="cl">InMemorySessionService</span>(),  <span class="cm"># in-memory session backend</span>
+        auto_create_session=<span class="kw">True</span>,
+    )
 
-<span class="cm"># Multi-turn: same session_id preserves conversation history</span>
-<span class="kw">for</span> turn <span class="kw">in</span> [
-    <span class="st">"My name is Alex and I live in Calgary."</span>,
-    <span class="st">"What city do I live in?"</span>,   <span class="cm"># agent remembers Calgary</span>
-    <span class="st">"What is my name?"</span>,           <span class="cm"># agent remembers Alex</span>
-]:
-    session.state[<span class="st">"turn_count"</span>] += <span class="nm">1</span>
-    msg = types.<span class="cl">Content</span>(role=<span class="st">"user"</span>, parts=[types.<span class="cl">Part</span>(text=turn)])
-    <span class="kw">async for</span> event <span class="kw">in</span> runner.<span class="fn">run_async</span>(
-        session_id=session.id,    <span class="cm"># ← same session = shared history</span>
-        user_id=session.user_id,
-        new_message=msg,
-    ):
-        <span class="kw">if</span> event.content <span class="kw">and</span> event.content.parts:
-            <span class="kw">for</span> part <span class="kw">in</span> event.content.parts:
-                <span class="kw">if</span> <span class="fn">hasattr</span>(part, <span class="st">"text"</span>) <span class="kw">and</span> part.text:
-                    <span class="fn">print</span>(part.text, end=<span class="st">""</span>)
+<span class="kw">def</span> <span class="fn">run_prompt</span>(prompt: str, user_id: str, session_id: str) -> str:
+    explicit_customer = extract_customer_id(prompt)   <span class="cm"># e.g. RET-3101</span>
+    key = (user_id, session_id)
+    <span class="kw">if</span> explicit_customer:
+        _SESSION_LAST_CUSTOMER[key] = explicit_customer
+    <span class="kw">else</span>:
+        explicit_customer = _SESSION_LAST_CUSTOMER.get(key)
+        <span class="kw">if</span> <span class="kw">not</span> explicit_customer:
+            <span class="kw">raise</span> <span class="cl">ValueError</span>(<span class="st">"First turn must include customer ID"</span>)
 
-<span class="cm"># Retrieve session to inspect state</span>
-refreshed = <span class="kw">await</span> session_service.<span class="fn">get_session</span>(
-    app_name=<span class="st">"memory_app"</span>, user_id=<span class="st">"student_001"</span>, session_id=session.id
-)
-<span class="fn">print</span>(refreshed.state)  <span class="cm"># {"turn_count": 3, "last_city_info": "...", ...}</span></code></pre>
+    <span class="cm"># Follow-up turns can omit ID; module injects remembered customer context.</span>
+    normalized_prompt = (
+        prompt <span class="kw">if</span> extract_customer_id(prompt)
+        <span class="kw">else</span> prompt + <span class="st">f"\n\nUse customer_id: {explicit_customer}"</span>
+    )
+
+    events = build_runner().run(
+        user_id=user_id,
+        session_id=session_id,      <span class="cm"># same session_id => same in-memory context</span>
+        new_message=user_content(normalized_prompt),
+    )
+    <span class="kw">return</span> extract_final_text(events)</code></pre>
       </div>
 
       <table class="data-table">
@@ -3995,29 +4045,29 @@ MODEL = <span class="st">"anthropic/claude-sonnet-4-5"</span>
         </div>
       </div>
 
-      <!-- ══════════════════════════════ MODULE 26 ══ -->
+      <!-- ══════════════════════════════ MODULE 13 USE CASE ══ -->
       <div id="sequential-api-workflow" class="module" style="margin-top:40px;">
         <div class="module-header">
-          <span class="module-num">MODULE 26</span>
+          <span class="module-num">MODULE 13 (IMPLEMENTED IN-MEMORY USE CASE)</span>
           <div>
-            <h2>Sequential Retail Deposit Agent as API</h2>
-            <div class="module-meta">SequentialAgent · intake → risk → decision · strict JSON contract</div>
+            <h2>Session Management — In-Memory (Retail Deposit Use Case)</h2>
+            <div class="module-meta">InMemorySessionService · SequentialAgent · intake → risk → offer recommendation</div>
           </div>
         </div>
-        <p>This module turns a multi-step workflow into an API-consumable decision service. A <span class="ic">SequentialAgent</span> runs three specialists in order — intake, risk, and final decision — then returns <strong>machine-parseable JSON</strong> suitable for downstream systems.</p>
+        <p>This implemented lesson aligns with Module 13 by demonstrating <strong>in-memory session management</strong> in a practical retail banking flow under <span class="ic">retail_deposit_banking_agent/</span>. Turn 1 provides a customer ID; follow-up turns can reuse the same <span class="ic">session_id</span> and omit customer ID while preserving context inside the Python process.</p>
         <div class="arch-diagram">
-          <strong style="color:var(--text); display:block; margin-bottom:16px;">Module 26 Pipeline</strong>
+          <strong style="color:var(--text); display:block; margin-bottom:16px;">Module 13 Pipeline</strong>
           <div class="arch-row">
-            <div class="arch-box accent">deposit_intake_agent<br><span style="font-size:10px">profile + deposits</span></div>
+            <div class="arch-box accent">retail_intake_agent<br><span style="font-size:10px">profile + deposits</span></div>
             <div class="arch-arrow">→</div>
-            <div class="arch-box yellow">deposit_risk_agent<br><span style="font-size:10px">AML + velocity</span></div>
+            <div class="arch-box yellow">retail_risk_agent<br><span style="font-size:10px">AML + velocity</span></div>
             <div class="arch-arrow">→</div>
-            <div class="arch-box green">deposit_decision_agent<br><span style="font-size:10px">JSON decision payload</span></div>
+            <div class="arch-box green">retail_offer_agent<br><span style="font-size:10px">decision + next actions</span></div>
           </div>
         </div>
         <div class="code-wrapper">
           <div class="code-header">
-            <div class="code-filename">retail_deposit_api_agent/agent.py — sequential agent</div>
+            <div class="code-filename">retail_deposit_banking_agent/agent.py — sequential agent</div>
             <span class="code-lang">PYTHON</span>
           </div>
           <pre><code><span class="kw">from</span> google.adk.agents <span class="kw">import</span> LlmAgent, SequentialAgent
@@ -4027,43 +4077,50 @@ MODEL = <span class="st">"anthropic/claude-sonnet-4-5"</span>
 )
 
 intake_agent = <span class="cl">LlmAgent</span>(
-    name=<span class="st">"deposit_intake_agent"</span>,
+    name=<span class="st">"retail_intake_agent"</span>,
     tools=[get_deposit_profile, get_recent_deposits],
-    output_key=<span class="st">"deposit_intake_summary"</span>,
+    output_key=<span class="st">"module13_intake_snapshot"</span>,
 )
 risk_agent = <span class="cl">LlmAgent</span>(
-    name=<span class="st">"deposit_risk_agent"</span>,
+    name=<span class="st">"retail_risk_agent"</span>,
     tools=[run_aml_screening, run_velocity_check],
-    output_key=<span class="st">"deposit_risk_summary"</span>,
+    output_key=<span class="st">"module13_risk_snapshot"</span>,
 )
-decision_agent = <span class="cl">LlmAgent</span>(
-    name=<span class="st">"deposit_decision_agent"</span>,
+offer_agent = <span class="cl">LlmAgent</span>(
+    name=<span class="st">"retail_offer_agent"</span>,
     tools=[get_deposit_offer_request],
-    output_key=<span class="st">"deposit_workflow_json"</span>,
-    instruction=<span class="st">"Return ONLY valid JSON."</span>,
+    output_key=<span class="st">"module13_final_recommendation"</span>,
+    instruction=<span class="st">"Return markdown recommendation + 2 next actions."</span>,
 )
 
 root_agent = <span class="cl">SequentialAgent</span>(
-    name=<span class="st">"retail_deposit_workflow_sequential"</span>,
-    sub_agents=[intake_agent, risk_agent, decision_agent],
+    name=<span class="st">"module13_retail_deposit_banking"</span>,
+    sub_agents=[intake_agent, risk_agent, offer_agent],
 )</code></pre>
         </div>
         <div class="code-wrapper">
           <div class="code-header">
-            <div class="code-filename">retail_deposit_api_agent/run_retail_deposit_api.sh — standalone curl invocation</div>
+            <div class="code-filename">retail_deposit_banking_agent/main.py — in-memory session continuity</div>
             <span class="code-lang">SHELL</span>
           </div>
-          <pre><code><span class="cm"># Start API first:</span>
-<span class="cm"># ./.venv/bin/python -m uvicorn retail_deposit_api_agent.api_app:app --host 127.0.0.1 --port 8626 --reload</span>
-
-./retail_deposit_api_agent/run_retail_deposit_api.sh RET-3101
-
-<span class="cm"># Equivalent raw request:</span>
-curl -sS http://127.0.0.1:8626/chat \
+          <pre><code><span class="cm"># Turn 1: explicit customer id</span>
+curl -sS http://127.0.0.1:8512/api/chat \
   -H <span class="st">"Content-Type: application/json"</span> \
   -d <span class="st">'{
+    "agent_key": "retail_deposit_banking_agent",
     "prompt": "RET-3101",
-    "user_id": "curl-user"
+    "user_id": "memory-demo",
+    "session_id": "module13-session-1"
+  }'</span>
+
+<span class="cm"># Turn 2: no customer id in prompt (same session_id)</span>
+curl -sS http://127.0.0.1:8512/api/chat \
+  -H <span class="st">"Content-Type: application/json"</span> \
+  -d <span class="st">'{
+    "agent_key": "retail_deposit_banking_agent",
+    "prompt": "Re-evaluate and give a stricter risk summary.",
+    "user_id": "memory-demo",
+    "session_id": "module13-session-1"
   }'</span></code></pre>
         </div>
       </div>
@@ -4098,7 +4155,7 @@ curl -sS http://127.0.0.1:8626/chat \
           <tr><td>23</td><td>Layer 3</td><td>Memory Architectures</td><td>In-context / episodic / semantic / procedural</td></tr>
           <tr><td>24</td><td>Layer 3</td><td>Multi-Agent Learning</td><td>Shared intelligence hub across agents</td></tr>
           <tr><td>25</td><td>Layer 3</td><td>Production Patterns</td><td>Circuit breakers, observability, fallbacks</td></tr>
-          <tr><td>26</td><td>Layer 3</td><td>Sequential API Workflow</td><td>Multi-step retail deposit decisioning with strict JSON output</td></tr>
+          <tr><td>13U</td><td>Implemented Use Case</td><td>In-Memory Session Retail Banking</td><td>Same-session context reuse across turns with intake/risk/offer pipeline</td></tr>
         </tbody>
       </table>
     </div>
@@ -4174,6 +4231,31 @@ curl -sS http://127.0.0.1:8626/chat \
   goTopBtn.addEventListener('click', () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
+</script>
+
+<!-- Mermaid: diagrams use pre.mermaid. Loads from CDN (needs network). file:// may block; use a local server if needed. -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  (function () {
+    if (typeof mermaid === 'undefined') return;
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'dark',
+      securityLevel: 'loose',
+      fontFamily: 'JetBrains Mono, ui-monospace, monospace',
+      themeVariables: {
+        primaryColor: '#161924',
+        primaryTextColor: '#e8eaf6',
+        primaryBorderColor: '#2a2f4a',
+        lineColor: '#5b7fff',
+        secondaryColor: '#10121a',
+        tertiaryColor: '#0d0f1a',
+      },
+    });
+    mermaid.run({ querySelector: 'pre.mermaid' }).catch(function (err) {
+      console.warn('Mermaid render failed:', err);
+    });
+  })();
 </script>
 </body>
 </html>

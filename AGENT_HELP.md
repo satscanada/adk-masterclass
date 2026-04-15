@@ -23,6 +23,7 @@ This file is the **markdown companion** to the in-app Help panel in the React UI
 | 10 MCP Client (Redis banking) | `mcp_client` | Single `LlmAgent` + `McpToolset` (Redis MCP server). Persists and reads customer-scoped business banking memory keys in Redis. | `POST /api/chat` or `POST /api/chat/stream` |
 | 11 MCP Server (OpenAPI explorer) | `mcp_server` | Custom MCP server + ADK client pair. Loads OpenAPI specs at startup, searches operations, returns resolved request/response schemas, and generates mock payloads. | `POST /api/chat` or `POST /api/chat/stream` |
 | 12 A2A CD Ladder | `a2a_agent` | Local banking assistant delegates CD ladder planning to a remote fixed-income specialist via Agent Card discovery and A2A task polling, with fallback mini-ladder if the peer is unavailable. | `POST /api/chat` |
+| 13 Retail Deposit Banking | `retail_deposit_banking_agent` | Simple `SequentialAgent` lesson use case: intake snapshot, risk snapshot, and offer recommendation for retail deposit onboarding using mock customer data. | `POST /api/chat` |
 
 ### Module 01 — Single Agent
 
@@ -107,6 +108,21 @@ This file is the **markdown companion** to the in-app Help panel in the React UI
   - `a2a_agent.api_app` — local assistant wrapper (`GET /health`, `POST /chat`)
   - `a2a_agent.specialist_api` — remote specialist peer (`GET /.well-known/agent-card`, `POST /a2a/tasks`, `GET /a2a/tasks/{task_id}`)
 - **Scripts:** `a2a_agent/run_a2a_specialist_server.sh`, `a2a_agent/run_a2a_api_server.sh`, `a2a_agent/run_a2a_api.sh`.
+
+### Module 13 — Session Management (In-Memory) Retail Use Case
+
+- **Python package:** `retail_deposit_banking_agent/`
+- **Entry:** `retail_deposit_banking_agent.main:run_prompt` (blocking)
+- **Pattern:** `InMemorySessionService` + `SequentialAgent` pipeline with three specialists:
+  - `retail_intake_agent` (profile + recent deposit summary)
+  - `retail_risk_agent` (AML + transaction velocity checks)
+  - `retail_offer_agent` (final recommendation + next actions)
+- **Tools reused:** `workflow_agent.workflow_tools` (`get_deposit_profile`, `get_recent_deposits`, `run_aml_screening`, `run_velocity_check`, `get_deposit_offer_request`)
+- **Session behavior:** first turn should provide customer ID; follow-up turns can omit it when the same `session_id` is reused. The module keeps last-customer context in-memory for that session.
+- **Lesson behavior:** deterministic teaching outcomes through `demo_expected_offer` from mock data:
+  - `RET-3101` -> recommendation path **APPROVE**
+  - `RET-4420` -> recommendation path **REVIEW_REQUIRED**
+- **UI:** registered in `agents.json` as `retail_deposit_banking_agent`, appears in React with Quick start chips for both customer IDs.
 
 ## Adding a new agent or module
 

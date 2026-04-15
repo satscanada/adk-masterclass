@@ -137,4 +137,14 @@ export const HELP_MODULES = [
       'POST /api/chat through shared registry, or standalone Module 12 API at /chat. Specialist peer exposes /.well-known/agent-card and /a2a/tasks endpoints.',
     supportsStreaming: false,
   },
+  {
+    module: '13',
+    title: 'Session Memory (retail deposit)',
+    agentKey: 'retail_deposit_banking_agent',
+    pattern:
+      'Module 13 in-memory session use case: SequentialAgent (retail_intake_agent -> retail_risk_agent -> retail_offer_agent) plus session-level customer context reuse when follow-up prompts omit the customer ID.',
+    apiSurface:
+      'POST /api/chat via shared registry. Turn 1: send RET-3101 or RET-4420. Follow-up turns with the same session can omit customer ID.',
+    supportsStreaming: false,
+  },
 ]

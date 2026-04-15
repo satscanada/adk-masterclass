@@ -24,7 +24,7 @@ This project now has 22 main parts:
 - `mcp_client/`: Module 10 — MCP client lesson using Redis MCP server tools for business banking memory
 - `mcp_server/`: Module 11 — custom MCP server lesson that loads OpenAPI specs, searches operations, and generates mock payloads
 - `a2a_agent/`: Module 12 — local banking assistant that delegates CD ladder planning to a remote fixed-income specialist via Agent Card + A2A tasks
-- `retail_deposit_api_agent/`: Module 26 — sequential retail deposit workflow (intake → risk → decision) returning JSON for API clients
+- `retail_deposit_banking_agent/`: Module 13 — simple retail deposit banking use case (intake → risk → recommendation)
 - `agents.json`: the list of agents shown in the UI
 - `agent_registry.py`: a small registry that lists available agents
 - `api_app.py`: the shared HTTP API for external clients
@@ -34,7 +34,6 @@ This project now has 22 main parts:
 - `run_workflow.sh`: optional CLI wrapper for Module 08 (workflow scenarios, no API or React)
 - `run_function_tools.sh`: optional CLI wrapper for Module 09 (function-tools scenarios, no API or React)
 - `a2a_agent/run_a2a_api.sh`: optional curl wrapper for Module 12 standalone API (`POST /chat`)
-- `retail_deposit_api_agent/run_retail_deposit_api.sh`: optional curl wrapper for Module 26 standalone API (`POST /chat`)
 
 There are also `tests/agent_registry_smoke_test.py`, `tests/smoke_test.py`, `tests/mulit_agent_smoke_test.py`, `tests/orchestrate_agent_smoke_test.py`, `tests/multi_agent_banking_smoke_test.py`, `tests/mcp_server_loader_smoke_test.py`, `tests/mcp_server_mock_payload_test.py`, and `tests/api_smoke_test.py`, which check that the registry, agents, OpenAPI tooling, and API work correctly.
 
@@ -84,9 +83,9 @@ If you are a beginner, read the files in this order:
 40. `a2a_agent/specialist_api.py`
 41. `a2a_agent/main.py`
 42. `a2a_agent/run_a2a_api.sh`
-43. `retail_deposit_api_agent/agent.py`
-44. `retail_deposit_api_agent/main.py`
-45. `retail_deposit_api_agent/run_retail_deposit_api.sh`
+43. `retail_deposit_banking_agent/agent.py`
+44. `retail_deposit_banking_agent/main.py`
+45. `retail_deposit_banking_agent/README.md`
 46. `tests/agent_registry_smoke_test.py`
 47. `tests/smoke_test.py`
 48. `tests/mulit_agent_smoke_test.py`
@@ -196,12 +195,10 @@ adk-masterclass/
 │   ├── run_a2a_api_server.sh
 │   ├── run_a2a_specialist_server.sh
 │   └── run_a2a_api.sh
-├── retail_deposit_api_agent/
+├── retail_deposit_banking_agent/
 │   ├── __init__.py
 │   ├── agent.py
-│   ├── api_app.py
 │   ├── README.md
-│   ├── run_retail_deposit_api.sh
 │   └── main.py
 └── simple_litellm_agent/
     ├── __init__.py
@@ -660,31 +657,31 @@ It:
 
 Think of this file as: "local A2A delegator + fallback planner."
 
-### `retail_deposit_api_agent/agent.py`
+### `retail_deposit_banking_agent/agent.py`
 
-This file builds the Module 26 `SequentialAgent` API workflow.
+This file builds the Module 13 `SequentialAgent` retail-deposit use case.
 
 It:
 
-- creates `deposit_intake_agent` (profile + recent deposit tools)
-- creates `deposit_risk_agent` (AML + velocity tools)
-- creates `deposit_decision_agent` (offer lookup + strict JSON contract output)
+- creates `retail_intake_agent` (profile + recent deposits)
+- creates `retail_risk_agent` (AML + velocity checks)
+- creates `retail_offer_agent` (final recommendation + next actions)
 - chains all three in one `SequentialAgent`
 
-Think of this file as: "multi-step retail deposit pipeline that ends in JSON."
+Think of this file as: "simple retail banking pipeline for intake, risk, and recommendation."
 
-### `retail_deposit_api_agent/main.py`
+### `retail_deposit_banking_agent/main.py`
 
-This file runs Module 26 with a blocking API-friendly contract.
+This file runs Module 13 with a blocking API/CLI contract.
 
 It:
 
 - caches one `Runner` per process
 - exposes `run_prompt(...)` for `POST /api/chat` and CLI use
-- extracts and validates a final JSON object from the model output
-- returns normalized pretty JSON text for reliable client parsing
+- prepends a pipeline banner for readability
+- returns the final recommendation markdown text
 
-Think of this file as: "JSON-first runner for the sequential retail workflow."
+Think of this file as: "simple sequential retail-banking runner."
 
 ### `agents.json`
 
@@ -787,28 +784,16 @@ It:
 
 Think of this file as: "quick API contract check for Module 12."
 
-### `retail_deposit_api_agent/api_app.py`
+### `retail_deposit_banking_agent/README.md`
 
-This file exposes Module 26 as a standalone FastAPI service.
-
-It:
-
-- adds `GET /health`
-- adds `POST /chat` for customer-ID prompts
-- calls local `run_prompt(...)` directly (no registry dependency)
-
-Think of this file as: "module-scoped API app for independent runs."
-
-### `retail_deposit_api_agent/run_retail_deposit_api.sh`
-
-This script calls Module 26 standalone API directly.
+This file is the module-local quickstart for Lesson 13.
 
 It:
 
-- sends `POST /chat` using `curl`
-- accepts customer ID as the first argument (`RET-3101` default)
+- shows direct CLI runs for both demo customers (`RET-3101`, `RET-4420`)
+- documents the registered `agent_key` used by shared API and React UI
 
-Think of this file as: "quick API contract check for Module 26."
+Think of this file as: "quick local guide for the Module 13 use case."
 
 ### `runstreamlit.sh`
 
@@ -1376,6 +1361,29 @@ Short version:
 
 ```text
 local assistant -> Agent Card discovery -> create A2A task -> poll task status -> final ladder artifact (or fallback)
+```
+
+### Flow 16: Run the Module 13 retail deposit banking use case
+
+Command:
+
+```bash
+./.venv/bin/python -m retail_deposit_banking_agent.main RET-3101
+```
+
+What happens:
+
+1. Python starts `retail_deposit_banking_agent/main.py`.
+2. `build_runner()` creates a `Runner` wrapping one `SequentialAgent` pipeline from `retail_deposit_banking_agent/agent.py`.
+3. `retail_intake_agent` calls `get_deposit_profile` and `get_recent_deposits` to produce intake context.
+4. `retail_risk_agent` calls `run_aml_screening` and `run_velocity_check` to produce risk context.
+5. `retail_offer_agent` calls `get_deposit_offer_request`, reads the two prior summaries from session state, and returns the final recommendation.
+6. `run_prompt(...)` prepends a pipeline banner and returns the final markdown text.
+
+Short version:
+
+```text
+terminal or chat UI -> retail_deposit_banking_agent/main.py -> SequentialAgent(intake -> risk -> offer) -> retail workflow tools -> final recommendation
 ```
 
 ## The Core Relationship Between Files

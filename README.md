@@ -4,7 +4,7 @@ This project shows a small but useful **Google Agent Development Kit (ADK)** lea
 
 It now includes:
 
-- the Python agent modules (including Module 06: a `BaseAgent` keyword router in `custom_agent/`, Module 07: a multi-agent business banking pipeline in `multi_agent_banking/`, Module 08: workflow orchestration patterns in `workflow_agent/`, Module 09: function-tool patterns in `function_tools_agent/`, Module 10: MCP client + Redis banking memory in `mcp_client/`, Module 11: a custom OpenAPI-backed MCP server in `mcp_server/`, Module 12: Agent-to-Agent CD ladder delegation in `a2a_agent/`, and Module 26: a sequential retail-deposit workflow API agent in `retail_deposit_api_agent/`)
+- the Python agent modules (including Module 06: a `BaseAgent` keyword router in `custom_agent/`, Module 07: a multi-agent business banking pipeline in `multi_agent_banking/`, Module 08: workflow orchestration patterns in `workflow_agent/`, Module 09: function-tool patterns in `function_tools_agent/`, Module 10: MCP client + Redis banking memory in `mcp_client/`, Module 11: a custom OpenAPI-backed MCP server in `mcp_server/`, Module 12: Agent-to-Agent CD ladder delegation in `a2a_agent/`, and Module 13: a simple retail-deposit banking use case in `retail_deposit_banking_agent/`)
 - a FastAPI layer that exposes those agents over HTTP
 - the original Streamlit UI
 - a React + Vite + Tailwind chat UI that talks to the API
@@ -128,13 +128,12 @@ adk-masterclass/
 │   ├── run_a2a_api_server.sh
 │   ├── run_a2a_specialist_server.sh
 │   └── run_a2a_api.sh
-├── retail_deposit_api_agent/
+├── retail_deposit_banking_agent/
 │   ├── __init__.py
 │   ├── agent.py
-│   ├── api_app.py
 │   ├── main.py
 │   ├── README.md
-│   └── run_retail_deposit_api.sh
+│   └── (module-local docs/examples)
 └── simple_litellm_agent/
     ├── __init__.py
     ├── agent.py
@@ -278,17 +277,14 @@ Keep **`AGENT_HELP.md`** and **`agentHelp.js`** aligned whenever you add or rena
 - `a2a_agent/README.md`
   - Module-local quickstart, curl usage, and Mermaid sequence diagram for A2A code flow.
 
-- `retail_deposit_api_agent/agent.py`
-  - Module 26: `SequentialAgent` pipeline for retail deposit workflow API use-cases: `deposit_intake_agent` (profile + deposits), `deposit_risk_agent` (AML + velocity), and `deposit_decision_agent` (strict JSON decision payload).
+- `retail_deposit_banking_agent/agent.py`
+  - Module 13: simple `SequentialAgent` pipeline for retail deposit onboarding use-cases: `retail_intake_agent` (profile + deposits), `retail_risk_agent` (AML + velocity), and `retail_offer_agent` (final recommendation and next actions).
 
-- `retail_deposit_api_agent/main.py`
-  - Module 26: blocking `run_prompt(...)` for API/CLI. Extracts and validates the final JSON object so callers receive machine-consumable output.
+- `retail_deposit_banking_agent/main.py`
+  - Module 13: blocking `run_prompt(...)` for API/CLI use. Returns a pipeline banner plus the final recommendation markdown.
 
-- `retail_deposit_api_agent/api_app.py`
-  - Module 26 standalone FastAPI wrapper (`GET /health`, `POST /chat`) so this lesson can run independently of the shared `api_app.py` + `agent_registry.py` stack.
-
-- `retail_deposit_api_agent/README.md`
-  - Module-local quickstart for running only this agent and invoking it with curl.
+- `retail_deposit_banking_agent/README.md`
+  - Module-local quickstart for running this Module 13 lesson from CLI and shared API/UI.
 
 - `agents.json`
   - Stores the agent list for the UI
@@ -325,10 +321,6 @@ Keep **`AGENT_HELP.md`** and **`agentHelp.js`** aligned whenever you add or rena
   - Optional: runs Module 09 function tool demos from the terminal
   - Supports `basic`, `long-running`, `agent-as-tool`, `celery`, or `all`
   - Keeps Module 09 as a CLI teaching module (no UI wiring required)
-
-- `retail_deposit_api_agent/run_retail_deposit_api.sh`
-  - Calls the standalone Module 26 API endpoint (`POST /chat`) using `curl`
-  - Passes a retail customer ID (`RET-3101` or `RET-4420`) and prints JSON response
 
 - `tests/agent_registry_smoke_test.py`
   - Checks that the registry loads the same agents defined in `agents.json`
@@ -721,45 +713,20 @@ curl -sS http://127.0.0.1:8512/api/chat \
   }'
 ```
 
-## Run sequential retail-deposit API agent (Module 26)
+## Run simple retail-deposit banking use case (Module 13)
 
-This lesson adds a **multi-step sequential agent** exposed through the existing API. The pipeline runs:
+This lesson adds a **simple multi-step sequential agent** exposed through the existing API. The pipeline runs:
 
 1. intake (`get_deposit_profile`, `get_recent_deposits`)
 2. risk checks (`run_aml_screening`, `run_velocity_check`)
-3. final decision (`get_deposit_offer_request`) with strict JSON output
+3. final recommendation (`get_deposit_offer_request`) with deterministic lesson outcomes
 
 Direct CLI run:
 
 ```bash
 cd /Users/sathishkr/PycharmProjects/adk-masterclass
-./.venv/bin/python -m retail_deposit_api_agent.main RET-3101
-```
-
-Standalone Module 26 API server:
-
-```bash
-cd /Users/sathishkr/PycharmProjects/adk-masterclass
-./.venv/bin/python -m uvicorn retail_deposit_api_agent.api_app:app --host 127.0.0.1 --port 8626 --reload
-```
-
-API invocation with the helper script (moved under module folder):
-
-```bash
-cd /Users/sathishkr/PycharmProjects/adk-masterclass
-./retail_deposit_api_agent/run_retail_deposit_api.sh RET-3101
-./retail_deposit_api_agent/run_retail_deposit_api.sh RET-4420
-```
-
-Equivalent raw `curl`:
-
-```bash
-curl -sS http://127.0.0.1:8626/chat \
-  -H "Content-Type: application/json" \
-  -d '{
-    "prompt": "RET-3101",
-    "user_id": "curl-user"
-  }'
+./.venv/bin/python -m retail_deposit_banking_agent.main RET-3101
+./.venv/bin/python -m retail_deposit_banking_agent.main RET-4420
 ```
 
 ## Run the API
