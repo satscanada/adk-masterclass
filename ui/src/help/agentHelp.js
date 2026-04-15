@@ -147,4 +147,14 @@ export const HELP_MODULES = [
       'POST /api/chat via shared registry. Turn 1: send RET-3101 or RET-4420. Follow-up turns with the same session can omit customer ID.',
     supportsStreaming: false,
   },
+  {
+    module: '14',
+    title: 'Retail deposit — DB sessions',
+    agentKey: 'retail_deposit_banking_db_agent',
+    pattern:
+      'Same SequentialAgent + tools as Module 13, but Runner uses DatabaseSessionService (default sqlite+aiosqlite file under db_persist/14). Session/event history survives API restarts.',
+    apiSurface:
+      'POST /api/chat. Optional MODULE14_DB_URL for sqlite+aiosqlite or Postgres. Same RET-3101 / RET-4420 quick-start chips.',
+    supportsStreaming: false,
+  },
 ]

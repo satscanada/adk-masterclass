@@ -2198,7 +2198,7 @@ async def build_cd_ladder(customer_id: str) -&gt; dict:
         </div>
       </div>
 
-      <p><span class="ic">InMemorySessionService</span> stores all sessions in RAM. Sessions are lost on process restart. In this repo, Module 13 applies that directly to a retail-deposit workflow: first turn provides customer ID, follow-up turns can reuse the same <span class="ic">session_id</span> and omit customer ID while context is still in memory. The API is identical to <span class="ic">DatabaseSessionService</span> — swapping storage is still a one-line change.</p>
+      <p><span class="ic">InMemorySessionService</span> stores all sessions in RAM. Sessions are lost on process restart. In this repo, Module 13 applies that directly to a retail-deposit workflow: first turn provides customer ID, follow-up turns can reuse the same <span class="ic">session_id</span> and omit customer ID while context is still in memory. Module 14 implements the same flow under <span class="ic">db_persist/14/</span> using <span class="ic">DatabaseSessionService</span> so ADK sessions survive API restarts (default SQLite file). The session-service API is identical — swapping storage is a one-line change in the runner setup.</p>
 
       <div class="code-wrapper">
         <div class="code-header">
@@ -4121,6 +4121,72 @@ curl -sS http://127.0.0.1:8512/api/chat \
     "prompt": "Re-evaluate and give a stricter risk summary.",
     "user_id": "memory-demo",
     "session_id": "module13-session-1"
+  }'</span></code></pre>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════ MODULE 14 USE CASE ══ -->
+      <div id="retail-deposit-db-session" class="module" style="margin-top:40px;">
+        <div class="module-header">
+          <span class="module-num">MODULE 14 (IMPLEMENTED DB SESSION USE CASE)</span>
+          <div>
+            <h2>Session Management — Database (Retail Deposit, Same Pipeline as Module 13)</h2>
+            <div class="module-meta">DatabaseSessionService · SQLite (async) · SequentialAgent · intake → risk → offer</div>
+          </div>
+        </div>
+        <p>This implemented lesson sits under <span class="ic">db_persist/14/</span> and reuses <span class="ic">retail_deposit_banking_agent.agent:create_agent</span> so the multi-agent graph is unchanged from Module 13. The runner swaps <span class="ic">InMemorySessionService</span> for <span class="ic">DatabaseSessionService</span>. The default URL is a <span class="ic">sqlite+aiosqlite://</span> file (<span class="ic">module14_sessions.db</span>) next to <span class="ic">main.py</span>; set <span class="ic">MODULE14_DB_URL</span> in <span class="ic">.env</span> for another database. Register in the shared UI as agent key <span class="ic">retail_deposit_banking_db_agent</span>.</p>
+        <div class="arch-diagram">
+          <strong style="color:var(--text); display:block; margin-bottom:16px;">Module 14 Pipeline (same three agents as Module 13)</strong>
+          <div class="arch-row">
+            <div class="arch-box accent">retail_intake_agent<br><span style="font-size:10px">profile + deposits</span></div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-box yellow">retail_risk_agent<br><span style="font-size:10px">AML + velocity</span></div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-box green">retail_offer_agent<br><span style="font-size:10px">decision + next actions</span></div>
+          </div>
+        </div>
+        <div class="code-wrapper">
+          <div class="code-header">
+            <div class="code-filename">db_persist/14/main.py — DatabaseSessionService + shared create_agent()</div>
+            <span class="code-lang">PYTHON</span>
+          </div>
+          <pre><code><span class="kw">from</span> google.adk.sessions <span class="kw">import</span> <span class="cl">DatabaseSessionService</span>
+<span class="kw">from</span> google.adk.runners <span class="kw">import</span> <span class="cl">Runner</span>
+<span class="kw">from</span> retail_deposit_banking_agent.agent <span class="kw">import</span> create_agent
+<span class="kw">from</span> simple_litellm_agent.config <span class="kw">import</span> get_settings
+
+settings = get_settings()
+session_service = <span class="cl">DatabaseSessionService</span>(<span class="st">"sqlite+aiosqlite:///…/module14_sessions.db"</span>)
+runner = <span class="cl">Runner</span>(
+    agent=create_agent(settings),
+    app_name=<span class="st">f"{settings.app_name}_module14_retail_deposit_db"</span>,
+    session_service=session_service,
+    auto_create_session=<span class="kw">True</span>,
+)</code></pre>
+        </div>
+        <div class="code-wrapper">
+          <div class="code-header">
+            <div class="code-filename">Shared API — persistent session_id</div>
+            <span class="code-lang">SHELL</span>
+          </div>
+          <pre><code><span class="cm"># Turn 1: explicit customer id (agent_key = Module 14)</span>
+curl -sS http://127.0.0.1:8512/api/chat \
+  -H <span class="st">"Content-Type: application/json"</span> \
+  -d <span class="st">'{
+    "agent_key": "retail_deposit_banking_db_agent",
+    "prompt": "RET-3101",
+    "user_id": "db-session-demo",
+    "session_id": "module14-session-1"
+  }'</span>
+
+<span class="cm"># Turn 2: same session_id — conversation state is in SQLite; include RET-#### if the API process restarted (in-process customer hint is cleared)</span>
+curl -sS http://127.0.0.1:8512/api/chat \
+  -H <span class="st">"Content-Type: application/json"</span> \
+  -d <span class="st">'{
+    "agent_key": "retail_deposit_banking_db_agent",
+    "prompt": "RET-3101 — summarize the prior recommendation in one sentence.",
+    "user_id": "db-session-demo",
+    "session_id": "module14-session-1"
   }'</span></code></pre>
         </div>
       </div>

@@ -4,7 +4,7 @@ This project shows a small but useful **Google Agent Development Kit (ADK)** lea
 
 It now includes:
 
-- the Python agent modules (including Module 06: a `BaseAgent` keyword router in `custom_agent/`, Module 07: a multi-agent business banking pipeline in `multi_agent_banking/`, Module 08: workflow orchestration patterns in `workflow_agent/`, Module 09: function-tool patterns in `function_tools_agent/`, Module 10: MCP client + Redis banking memory in `mcp_client/`, Module 11: a custom OpenAPI-backed MCP server in `mcp_server/`, Module 12: Agent-to-Agent CD ladder delegation in `a2a_agent/`, and Module 13: a simple retail-deposit banking use case in `retail_deposit_banking_agent/`)
+- the Python agent modules (including Module 06: a `BaseAgent` keyword router in `custom_agent/`, Module 07: a multi-agent business banking pipeline in `multi_agent_banking/`, Module 08: workflow orchestration patterns in `workflow_agent/`, Module 09: function-tool patterns in `function_tools_agent/`, Module 10: MCP client + Redis banking memory in `mcp_client/`, Module 11: a custom OpenAPI-backed MCP server in `mcp_server/`, Module 12: Agent-to-Agent CD ladder delegation in `a2a_agent/`, Module 13: a simple retail-deposit banking use case in `retail_deposit_banking_agent/`, and Module 14: the same retail flow with `DatabaseSessionService` under `db_persist/14/`)
 - a FastAPI layer that exposes those agents over HTTP
 - the original Streamlit UI
 - a React + Vite + Tailwind chat UI that talks to the API
@@ -134,6 +134,14 @@ adk-masterclass/
 │   ├── main.py
 │   ├── README.md
 │   └── (module-local docs/examples)
+├── db_persist/
+│   ├── __init__.py
+│   ├── 14/
+│   │   ├── __init__.py
+│   │   └── main.py
+│   ├── 14A/
+│   ├── 14B/
+│   └── 14C/
 └── simple_litellm_agent/
     ├── __init__.py
     ├── agent.py
@@ -285,6 +293,9 @@ Keep **`AGENT_HELP.md`** and **`agentHelp.js`** aligned whenever you add or rena
 
 - `retail_deposit_banking_agent/README.md`
   - Module-local quickstart for running this Module 13 lesson from CLI and shared API/UI.
+
+- `db_persist/14/main.py`
+  - Module 14: same retail `SequentialAgent` as Module 13, registered as `retail_deposit_banking_db_agent`, with `DatabaseSessionService` (default `sqlite+aiosqlite` file beside this module; override with `MODULE14_DB_URL`).
 
 - `agents.json`
   - Stores the agent list for the UI
@@ -728,6 +739,17 @@ cd /Users/sathishkr/PycharmProjects/adk-masterclass
 ./.venv/bin/python -m retail_deposit_banking_agent.main RET-3101
 ./.venv/bin/python -m retail_deposit_banking_agent.main RET-4420
 ```
+
+## Run retail-deposit banking with DB sessions (Module 14)
+
+Module 14 reuses the Module 13 agent graph from `retail_deposit_banking_agent.agent` and swaps in `DatabaseSessionService` so ADK sessions persist across API restarts. By default SQLite writes to `db_persist/14/module14_sessions.db` (gitignored). Set `MODULE14_DB_URL` in `.env` for a custom URL (use `sqlite+aiosqlite:///…` for local files).
+
+```bash
+cd /Users/sathishkr/PycharmProjects/adk-masterclass
+./.venv/bin/python -m db_persist.14.main RET-3101
+```
+
+In the React UI, pick **Retail Deposit Banking — DB sessions (Module 14)** (or send `agent_key` `retail_deposit_banking_db_agent` via `POST /api/chat`).
 
 ## Run the API
 

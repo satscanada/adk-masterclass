@@ -53,3 +53,6 @@ id_ecdsa
 # OS
 .DS_Store
 Thumbs.db
+
+# Module 14+ local SQLite session stores
+db_persist/**/*.db

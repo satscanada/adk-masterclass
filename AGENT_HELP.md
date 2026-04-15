@@ -24,6 +24,7 @@ This file is the **markdown companion** to the in-app Help panel in the React UI
 | 11 MCP Server (OpenAPI explorer) | `mcp_server` | Custom MCP server + ADK client pair. Loads OpenAPI specs at startup, searches operations, returns resolved request/response schemas, and generates mock payloads. | `POST /api/chat` or `POST /api/chat/stream` |
 | 12 A2A CD Ladder | `a2a_agent` | Local banking assistant delegates CD ladder planning to a remote fixed-income specialist via Agent Card discovery and A2A task polling, with fallback mini-ladder if the peer is unavailable. | `POST /api/chat` |
 | 13 Retail Deposit Banking | `retail_deposit_banking_agent` | Simple `SequentialAgent` lesson use case: intake snapshot, risk snapshot, and offer recommendation for retail deposit onboarding using mock customer data. | `POST /api/chat` |
+| 14 Retail Deposit Banking (DB sessions) | `retail_deposit_banking_db_agent` | Same pipeline as Module 13 with `DatabaseSessionService` — ADK sessions and event history persist across API restarts (default SQLite file under `db_persist/14/`). | `POST /api/chat` |
 
 ### Module 01 — Single Agent
 
@@ -123,6 +124,15 @@ This file is the **markdown companion** to the in-app Help panel in the React UI
   - `RET-3101` -> recommendation path **APPROVE**
   - `RET-4420` -> recommendation path **REVIEW_REQUIRED**
 - **UI:** registered in `agents.json` as `retail_deposit_banking_agent`, appears in React with Quick start chips for both customer IDs.
+
+### Module 14 — Database session retail use case (SQLite default)
+
+- **Python package:** `db_persist/14/` (import path `db_persist.14.main`)
+- **Entry:** `db_persist.14.main:run_prompt` (blocking)
+- **Pattern:** Reuses `retail_deposit_banking_agent.agent:create_agent` (same three `LlmAgent` stages and `workflow_agent.workflow_tools`). Swaps `InMemorySessionService` for `DatabaseSessionService` so ADK session storage survives process restarts.
+- **Database URL:** `MODULE14_DB_URL` (optional). Default is a file `module14_sessions.db` next to `db_persist/14/main.py`, using an async SQLite URL: `sqlite+aiosqlite:///…` (required form for SQLAlchemy’s asyncio engine).
+- **Customer ID continuity:** Same in-process `(user_id, session_id) -> last customer` map as Module 13 for prompts that omit `RET-####` on follow-up turns; ADK conversation persistence is database-backed regardless.
+- **UI:** `agents.json` key `retail_deposit_banking_db_agent`, same Quick start chips as Module 13.
 
 ## Adding a new agent or module
 

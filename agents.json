@@ -102,6 +102,17 @@
         {"label": "RET-3101 — healthy profile", "prompt": "RET-3101"},
         {"label": "RET-4420 — higher-risk profile", "prompt": "RET-4420"}
       ]
+    },
+    {
+      "key": "retail_deposit_banking_db_agent",
+      "title": "Retail Deposit Banking — DB sessions (Module 14)",
+      "description": "Module 14: same retail deposit SequentialAgent as Module 13, but sessions persist via DatabaseSessionService (SQLite file under db_persist/14 by default).",
+      "prompt_hint": "Turn 1: send RET-3101 or RET-4420. Reuse session_id for follow-ups; set MODULE14_DB_URL for a custom sqlite+aiosqlite or Postgres URL.",
+      "module": "db_persist.14.main",
+      "suggestions": [
+        {"label": "RET-3101 — healthy profile", "prompt": "RET-3101"},
+        {"label": "RET-4420 — higher-risk profile", "prompt": "RET-4420"}
+      ]
     }
   ]
 }

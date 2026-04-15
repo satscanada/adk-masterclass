@@ -1,4 +1,5 @@
 google-adk==1.28.1
+aiosqlite>=0.20.0
 litellm==1.83.1
 mcp==1.27.0
 PyYAML==6.0.3

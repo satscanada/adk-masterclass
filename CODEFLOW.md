@@ -10,7 +10,7 @@ The goal is to help you answer three questions:
 
 ## Big Picture
 
-This project now has 22 main parts:
+This project now has 23 main parts:
 
 - `simple_litellm_agent/`: the actual ADK agent code
 - `mulit_agent/`: a simple Module 02 example with two independent agents
@@ -25,6 +25,7 @@ This project now has 22 main parts:
 - `mcp_server/`: Module 11 — custom MCP server lesson that loads OpenAPI specs, searches operations, and generates mock payloads
 - `a2a_agent/`: Module 12 — local banking assistant that delegates CD ladder planning to a remote fixed-income specialist via Agent Card + A2A tasks
 - `retail_deposit_banking_agent/`: Module 13 — simple retail deposit banking use case (intake → risk → recommendation)
+- `db_persist/14/`: Module 14 — same retail use case with `DatabaseSessionService` (default SQLite under `db_persist/14/`)
 - `agents.json`: the list of agents shown in the UI
 - `agent_registry.py`: a small registry that lists available agents
 - `api_app.py`: the shared HTTP API for external clients
@@ -86,14 +87,15 @@ If you are a beginner, read the files in this order:
 43. `retail_deposit_banking_agent/agent.py`
 44. `retail_deposit_banking_agent/main.py`
 45. `retail_deposit_banking_agent/README.md`
-46. `tests/agent_registry_smoke_test.py`
-47. `tests/smoke_test.py`
-48. `tests/mulit_agent_smoke_test.py`
-49. `tests/orchestrate_agent_smoke_test.py`
-50. `tests/multi_agent_banking_smoke_test.py`
-51. `tests/mcp_server_loader_smoke_test.py`
-52. `tests/mcp_server_mock_payload_test.py`
-53. `tests/api_smoke_test.py`
+46. `db_persist/14/main.py`
+47. `tests/agent_registry_smoke_test.py`
+48. `tests/smoke_test.py`
+49. `tests/mulit_agent_smoke_test.py`
+50. `tests/orchestrate_agent_smoke_test.py`
+51. `tests/multi_agent_banking_smoke_test.py`
+52. `tests/mcp_server_loader_smoke_test.py`
+53. `tests/mcp_server_mock_payload_test.py`
+54. `tests/api_smoke_test.py`
 
 That order goes from simple configuration to the full app flow.
 
@@ -200,6 +202,14 @@ adk-masterclass/
 │   ├── agent.py
 │   ├── README.md
 │   └── main.py
+├── db_persist/
+│   ├── __init__.py
+│   ├── 14/
+│   │   ├── __init__.py
+│   │   └── main.py
+│   ├── 14A/
+│   ├── 14B/
+│   └── 14C/
 └── simple_litellm_agent/
     ├── __init__.py
     ├── config.py
@@ -682,6 +692,18 @@ It:
 - returns the final recommendation markdown text
 
 Think of this file as: "simple sequential retail-banking runner."
+
+### `db_persist/14/main.py`
+
+This file runs **Module 14**, the same retail pipeline as Module 13 with `DatabaseSessionService` instead of `InMemorySessionService`.
+
+It:
+
+- imports `create_agent` from `retail_deposit_banking_agent.agent` (shared graph)
+- builds a cached `Runner` with `DatabaseSessionService` (default `sqlite+aiosqlite` file beside this module; optional `MODULE14_DB_URL`)
+- reuses the Module 13 customer-ID resolution and `run_prompt(...)` contract for `POST /api/chat`
+
+Think of this file as: "retail sequential runner with durable ADK session storage."
 
 ### `agents.json`
 
@@ -1384,6 +1406,27 @@ Short version:
 
 ```text
 terminal or chat UI -> retail_deposit_banking_agent/main.py -> SequentialAgent(intake -> risk -> offer) -> retail workflow tools -> final recommendation
+```
+
+### Flow 17: Run the Module 14 retail deposit use case with database sessions
+
+Command:
+
+```bash
+./.venv/bin/python -m db_persist.14.main RET-3101
+```
+
+What happens:
+
+1. Python starts `db_persist/14/main.py`.
+2. `build_runner()` creates a `Runner` with `DatabaseSessionService` (SQLite file by default) and the same `SequentialAgent` from `retail_deposit_banking_agent.agent:create_agent`.
+3. The same intake, risk, and offer tool calls run as in Flow 16.
+4. ADK session rows and events persist in the configured database, so restarting the API does not erase session history for a given `(user_id, session_id)`.
+
+Short version:
+
+```text
+terminal or chat UI -> db_persist/14/main.py -> DatabaseSessionService -> SequentialAgent(same as Module 13) -> final recommendation
 ```
 
 ## The Core Relationship Between Files
